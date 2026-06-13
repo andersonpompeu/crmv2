@@ -1,0 +1,142 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global fallback rules (default deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable validation helper functions for robust verification
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidLead(data) {
+      return data.keys().hasAll(['id', 'templateId', 'name', 'phone', 'createdAt', 'status'])
+        && data.id is string && data.id.size() <= 128
+        && data.templateId is string && data.templateId.size() <= 128
+        && data.name is string && data.name.size() <= 128
+        && data.phone is string && data.phone.size() <= 50
+        && data.createdAt is string && data.createdAt.size() <= 100
+        && data.status is string && (
+          data.status == 'Novo' ||
+          data.status == 'Encaminhado' ||
+          data.status == 'Em Atendimento' ||
+          data.status == 'Concluído' ||
+          data.status == 'Recusado' ||
+          data.status == 'Arquivado'
+        );
+    }
+
+    function isValidTemplate(data) {
+      return data.keys().hasAll(['id', 'name', 'siteUrl', 'active', 'leadsCount', 'createdAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.siteUrl is string && data.siteUrl.size() <= 256
+        && data.active is bool
+        && data.leadsCount is int
+        && data.createdAt is string && data.createdAt.size() <= 100;
+    }
+
+    function isValidProfessional(data) {
+      return data.keys().hasAll(['id', 'name', 'specialty', 'phone', 'email', 'templateId', 'createdAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.specialty is string && data.specialty.size() <= 150
+        && data.phone is string && data.phone.size() <= 50
+        && data.email is string && data.email.size() <= 120
+        && data.templateId is string && data.templateId.size() <= 128
+        && data.createdAt is string && data.createdAt.size() <= 100;
+    }
+
+    function isValidAlertConfig(data) {
+      return data.keys().hasAll(['emailEnabled', 'emailAddress', 'whatsappEnabled', 'whatsappNumber', 'soundEnabled', 'osNotificationEnabled'])
+        && data.emailEnabled is bool
+        && data.emailAddress is string && data.emailAddress.size() <= 120
+        && data.whatsappEnabled is bool
+        && data.whatsappNumber is string && data.whatsappNumber.size() <= 50
+        && data.soundEnabled is bool
+        && data.osNotificationEnabled is bool;
+    }
+
+    function isValidWhatsAppTemplate(data) {
+      return data.keys().hasAll(['id', 'name', 'content', 'isDefault'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.content is string && data.content.size() <= 2000
+        && data.isDefault is bool;
+    }
+
+    function isValidReview(data) {
+      return data.keys().hasAll(['id', 'leadId', 'professionalId', 'rating', 'createdAt', 'tokenUsed'])
+        && data.id is string && data.id.size() <= 128
+        && data.leadId is string && data.leadId.size() <= 128
+        && data.professionalId is string && data.professionalId.size() <= 128
+        && (data.rating >= 1 && data.rating <= 5)
+        && data.createdAt is string && data.createdAt.size() <= 100
+        && data.tokenUsed is string && data.tokenUsed.size() <= 128;
+    }
+
+    function isValidWebhookLog(data) {
+      return data.keys().hasAll(['id', 'timestamp', 'payload', 'status'])
+        && data.id is string && data.id.size() <= 128
+        && data.timestamp is string && data.timestamp.size() <= 100
+        && data.payload is string && data.payload.size() <= 200000
+        && (data.status is int || data.status is float)
+        && (data.get('errorMessage', '') is string || data.get('errorMessage', null) == null)
+        && (data.get('userAgent', '') is string || data.get('userAgent', null) == null)
+        && (data.get('ipAddress', '') is string || data.get('ipAddress', null) == null)
+        && (data.get('templateName', '') is string || data.get('templateName', null) == null);
+    }
+
+    // 1. Leads
+    match /leads/{leadId} {
+      allow read: if true;
+      allow create, update: if isValidId(leadId) && isValidLead(request.resource.data);
+      allow delete: if isValidId(leadId);
+    }
+
+    // 2. Templates
+    match /templates/{templateId} {
+      allow read: if true;
+      allow create, update: if isValidId(templateId) && isValidTemplate(request.resource.data);
+      allow delete: if isValidId(templateId);
+    }
+
+    // 3. Professionals
+    match /professionals/{professionalId} {
+      allow read: if true;
+      allow create, update: if isValidId(professionalId) && isValidProfessional(request.resource.data);
+      allow delete: if isValidId(professionalId);
+    }
+
+    // 4. Alert Configurations
+    match /settings/alertConfig {
+      allow read: if true;
+      allow create, update: if isValidAlertConfig(request.resource.data);
+      allow delete: if true;
+    }
+
+    // 5. WhatsApp Templates
+    match /whatsappTemplates/{templateId} {
+      allow read: if true;
+      allow create, update: if isValidId(templateId) && isValidWhatsAppTemplate(request.resource.data);
+      allow delete: if isValidId(templateId);
+    }
+
+    // 6. Reviews
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create, update: if isValidId(reviewId) && isValidReview(request.resource.data);
+      allow delete: if isValidId(reviewId);
+    }
+
+    // 7. Webhook Logs
+    match /webhookLogs/{logId} {
+      allow read: if true;
+      allow create, update: if isValidId(logId) && isValidWebhookLog(request.resource.data);
+      allow delete: if isValidId(logId);
+    }
+  }
+}

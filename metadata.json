@@ -1,0 +1,6 @@
+{
+  "name": "LeadCapture Dashboard",
+  "description": "Plataforma SaaS para captura de leads, alertas em tempo real e rastreabilidade por templates de formulários instalados em sites externos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

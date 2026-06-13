@@ -1,0 +1,165 @@
+{
+  "entities": {
+    "Lead": {
+      "title": "Lead",
+      "description": "Lead captured from forms on external websites",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the lead" },
+        "templateId": { "type": "string", "description": "Form template where lead originated" },
+        "templateName": { "type": "string", "description": "Name of origin template" },
+        "name": { "type": "string", "description": "Name of the lead" },
+        "phone": { "type": "string", "description": "Phone number of the lead" },
+        "email": { "type": "string", "description": "E-mail of the lead" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "status": { "type": "string", "enum": ["Novo", "Encaminhado", "Em Atendimento", "Concluído", "Recusado", "Arquivado"], "description": "Lead workflow status" },
+        "notes": { "type": "string", "description": "Follow-up comments and system log notes" },
+        "notified": { "type": "boolean", "description": "Whether lead alert notification has fired" },
+        "assignedProfessionalId": { "type": "string", "description": "Assigned professional UID" },
+        "forwardToken": { "type": "string", "description": "Unique forwarding action verification token" },
+        "forwardExpiresAt": { "type": "string", "format": "date-time", "description": "UTC expiration for the forward link" },
+        "forwardedAt": { "type": "string", "format": "date-time", "description": "When the lead was forwarded" },
+        "acceptedAt": { "type": "string", "format": "date-time", "description": "When the professional accepted the lead" },
+        "location": { "type": "string", "description": "City/state description details" },
+        "operatorNotifiedOfAcceptance": { "type": "boolean", "description": "Admin notification status of professional's acceptance" },
+        "address": { "type": "string", "description": "Detailed lead location address" },
+        "description": { "type": "string", "description": "Service request description" },
+        "estimatedValue": { "type": "number", "description": "Estimated value of the accepted service in BRL" },
+        "reviewToken": { "type": "string", "description": "Unique evaluation token" },
+        "reviewTokenExpiresAt": { "type": "string", "format": "date-time", "description": "When the evaluation token expires" },
+        "reviewedAt": { "type": "string", "format": "date-time", "description": "When the lead evaluation was completed" }
+      },
+      "required": ["id", "templateId", "name", "phone", "createdAt", "status"]
+    },
+    "Template": {
+      "title": "Template",
+      "description": "Form template config used on external websites",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the template" },
+        "name": { "type": "string", "description": "Human friendly name of the site/purpose" },
+        "siteUrl": { "type": "string", "description": "Target website domain URL" },
+        "bgColor": { "type": "string", "description": "Badge CSS background color background" },
+        "textColor": { "type": "string", "description": "Hex text color or CSS tailwind color class" },
+        "active": { "type": "boolean", "description": "Whether template captures leads" },
+        "leadsCount": { "type": "number", "description": "Dynamic lead hit counts" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Initial creation date and time" }
+      },
+      "required": ["id", "name", "siteUrl", "active", "leadsCount", "createdAt"]
+    },
+    "Professional": {
+      "title": "Professional",
+      "description": "Collaborator professional accepting captured dispatch leads",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Specialist contractor UID" },
+        "name": { "type": "string", "description": "Full name of the professional" },
+        "specialty": { "type": "string", "description": "Profession or service category detail" },
+        "phone": { "type": "string", "description": "Primary WhatsApp contact number" },
+        "email": { "type": "string", "description": "E-mail of the professional" },
+        "photoUrl": { "type": "string", "description": "Profile picture avatar URL" },
+        "templateId": { "type": "string", "description": "The category/site template they handle" },
+        "profitRecords": { "type": "array", "description": "Earnings and profit history records generated through accepted leads" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Contract registration stamp" },
+        "reviewStats": {
+          "type": "object",
+          "description": "Reputation evaluation metrics",
+          "properties": {
+            "average": { "type": "number" },
+            "total": { "type": "number" },
+            "distribution": { "type": "object" }
+          }
+        }
+      },
+      "required": ["id", "name", "specialty", "phone", "email", "templateId", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Public feedback for professional performance",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "leadId": { "type": "string" },
+        "professionalId": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "clientName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "tokenUsed": { "type": "string" }
+      },
+      "required": ["id", "leadId", "professionalId", "rating", "createdAt", "tokenUsed"]
+    },
+    "AlertConfig": {
+      "title": "AlertConfig",
+      "description": "Global settings for admin-assigned lead webhooks and system warnings",
+      "type": "object",
+      "properties": {
+        "emailEnabled": { "type": "boolean" },
+        "emailAddress": { "type": "string" },
+        "whatsappEnabled": { "type": "boolean" },
+        "whatsappNumber": { "type": "string" },
+        "soundEnabled": { "type": "boolean" },
+        "osNotificationEnabled": { "type": "boolean" }
+      },
+      "required": ["emailEnabled", "emailAddress", "whatsappEnabled", "whatsappNumber", "soundEnabled", "osNotificationEnabled"]
+    },
+    "WhatsAppTemplate": {
+      "title": "WhatsAppTemplate",
+      "description": "Custom templates for outbound WhatsApp dispatch notifications",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "content": { "type": "string" },
+        "isDefault": { "type": "boolean" }
+      },
+      "required": ["id", "name", "content", "isDefault"]
+    },
+    "WebhookLog": {
+      "title": "WebhookLog",
+      "description": "Request log attempts from external form captures or webhook integrations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "payload": { "type": "string" },
+        "status": { "type": "number" },
+        "errorMessage": { "type": "string" },
+        "userAgent": { "type": "string" },
+        "ipAddress": { "type": "string" },
+        "templateName": { "type": "string" }
+      },
+      "required": ["id", "timestamp", "payload", "status"]
+    }
+  },
+  "firestore": {
+    "/leads/{leadId}": {
+      "schema": { "$ref": "#/entities/Lead" },
+      "description": "Direct collection for captured pipeline leads"
+    },
+    "/templates/{templateId}": {
+      "schema": { "$ref": "#/entities/Template" },
+      "description": "Site landing forms configurations"
+    },
+    "/professionals/{professionalId}": {
+      "schema": { "$ref": "#/entities/Professional" },
+      "description": "Direct collection of service contractors"
+    },
+    "/settings/alertConfig": {
+      "schema": { "$ref": "#/entities/AlertConfig" },
+      "description": "System alerts notifications setups"
+    },
+    "/whatsappTemplates/{templateId}": {
+      "schema": { "$ref": "#/entities/WhatsAppTemplate" },
+      "description": "Outbound broadcast template configurations"
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Review" },
+      "description": "Client feedback and professional evaluations"
+    },
+    "/webhookLogs/{logId}": {
+      "schema": { "$ref": "#/entities/WebhookLog" },
+      "description": "Tries of raw incoming lead webhook request entries"
+    }
+  }
+}
