@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/webhook",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/embed.js",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/((?!assets/|favicon.ico|.*\\.png|.*\\.json|.*\\.svg|.*\\.txt).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

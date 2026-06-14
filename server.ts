@@ -6,6 +6,9 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { GoogleGenAI, Type } from "@google/genai";
 
+const app = express();
+export default app;
+
 // Strip undefined from objects for safe Firestore setDoc calls
 function stripUndefined(obj: any): any {
   if (obj === null || obj === undefined) return null;
@@ -73,9 +76,17 @@ const logger = {
 };
 
 // Helper to send message via WhatsApp Evolution API
-const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || "http://76.13.160.178:32771";
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || "gw5DDlfgtIuZmkCdlOyVfwosCUGShNUK";
-const EVOLUTION_INSTANCE_NAME = process.env.EVOLUTION_INSTANCE_NAME || "crm";
+let EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || "https://evo.drorcamento.com";
+let EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || "429683C4C977415CAAFCCE10F7D57E11";
+let EVOLUTION_INSTANCE_NAME = process.env.EVOLUTION_INSTANCE_NAME || "crm";
+let EVOLUTION_INSTANCE_TOKEN = process.env.EVOLUTION_INSTANCE_TOKEN || "2DB073666110-4B91-BAE7-1E0EB36CF541";
+
+if (EVOLUTION_API_URL.includes("76.13.160.178") || EVOLUTION_API_KEY === "gw5DDlfgtIuZmkCdlOyVfwosCUGShNUK") {
+  EVOLUTION_API_URL = "https://evo.drorcamento.com";
+  EVOLUTION_API_KEY = "429683C4C977415CAAFCCE10F7D57E11";
+  EVOLUTION_INSTANCE_NAME = "crm";
+  EVOLUTION_INSTANCE_TOKEN = "2DB073666110-4B91-BAE7-1E0EB36CF541";
+}
 
 function formatBrazilianNumber(phone: string): string {
   let clean = phone.replace(/\D/g, "");
@@ -92,42 +103,94 @@ function formatBrazilianNumber(phone: string): string {
 }
 
 async function sendWhatsAppMessage(toPhone: string, text: string): Promise<boolean> {
-  const formattedPhone = formatBrazilianNumber(toPhone);
+  let formattedPhone = formatBrazilianNumber(toPhone);
   if (!formattedPhone) {
     logger.warn(`WhatsApp send ignored: Phone number is empty or invalid`, { toPhone });
     return false;
   }
 
+  // Standard Evolution API uses "/message/sendText/{instanceName}" endpoint
   const url = `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE_NAME}`;
   
   const payload = {
     number: formattedPhone,
     text: text,
     delay: 1200,
-    linkPreview: true,
-    options: {
-      delay: 1200,
-      presence: "composing",
-      linkPreview: true
-    }
+    linkPreview: true
   };
 
   try {
-    const response = await fetch(url, {
+    let response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "apikey": EVOLUTION_API_KEY
+        "apikey": EVOLUTION_API_KEY || EVOLUTION_INSTANCE_TOKEN
       },
       body: JSON.stringify(payload)
     });
 
-    if (response.ok) {
-      const data = await response.json();
+    let isOk = response.ok;
+    let errText = "";
+    let data: any = null;
+
+    if (isOk) {
+      data = await response.json();
+    } else {
+      errText = await response.text();
+    }
+
+    // Smart fallback for Brazilian 9-digit issues on WhatsApp JIDs
+    if (!isOk && formattedPhone.startsWith("55")) {
+      try {
+        const parsedErr = JSON.parse(errText);
+        const firstMsg = parsedErr?.response?.message?.[0];
+        
+        // If Evolution API says Bad Request (400) or explicitly that the destination number/JID does not exist
+        if (response.status === 400 || parsedErr?.status === 400 || firstMsg?.exists === false) {
+          let fallbackPhone = "";
+          
+          if (formattedPhone.length === 13 && formattedPhone[4] === "9") {
+            // Attempt fallback to 12-digit format (remove the '9' after country code 55 and DDD)
+            fallbackPhone = "55" + formattedPhone.substring(2, 4) + formattedPhone.substring(5);
+          } else if (formattedPhone.length === 12) {
+            // Attempt fallback to 13-digit format (insert '9' after country code 55 and DDD)
+            fallbackPhone = "55" + formattedPhone.substring(2, 4) + "9" + formattedPhone.substring(4);
+          }
+
+          if (fallbackPhone) {
+            logger.info(`Fallback triggered: Retrying with formatted counterpart ${fallbackPhone} instead of ${formattedPhone}`);
+            const fallbackPayload = {
+              ...payload,
+              number: fallbackPhone
+            };
+
+            const fallbackResponse = await fetch(url, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "apikey": EVOLUTION_API_KEY || EVOLUTION_INSTANCE_TOKEN
+              },
+              body: JSON.stringify(fallbackPayload)
+            });
+
+            if (fallbackResponse.ok) {
+              data = await fallbackResponse.json();
+              formattedPhone = fallbackPhone;
+              isOk = true;
+            } else {
+              errText = await fallbackResponse.text();
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore JSON parse or fallback errors, keep original error details
+      }
+    }
+
+    if (isOk) {
       logger.info(`WhatsApp message successfully sent via Evolution API to ${formattedPhone}`, { response: data });
       return true;
     } else {
-      const errText = await response.text();
       logger.error(`Failed to send WhatsApp message via Evolution API to ${formattedPhone}. Status: ${response.status}`, null, { errorResponse: errText });
       return false;
     }
@@ -1074,8 +1137,6 @@ function expireLeadInDatabase(lead: any) {
 }
 
 async function startServer() {
-  const app = express();
-
   // Load Cloud DB in background prior to/while launching endpoints so we don't block server startup
   loadDataFromFirestore().catch((err) => {
     logger.error("Failed to load / seed data from Firestore initially in background:", err);
@@ -2291,6 +2352,152 @@ async function startServer() {
     res.json(dataStore.alertConfig);
   });
 
+  // GET Evolution API Connection Status
+  app.get("/api/evolution/status", async (req, res) => {
+    try {
+      const globalKey = EVOLUTION_API_KEY;
+      const name = EVOLUTION_INSTANCE_NAME;
+      const crmToken = EVOLUTION_INSTANCE_TOKEN;
+
+      // Fetch all instances
+      const allRes = await fetch(`${EVOLUTION_API_URL}/instance/fetchInstances`, {
+        headers: { "apikey": globalKey }
+      });
+
+      if (!allRes.ok) {
+        throw new Error(`Failed to fetch instances from Evolution. Status: ${allRes.status}`);
+      }
+
+      const allData = await allRes.json();
+      let crmInst = allData?.find((inst: any) => inst.name === name || inst.instanceName === name);
+
+      // Auto-create instance if it does not exist
+      if (!crmInst) {
+        logger.info(`Instance '${name}' not found. Auto-creating...`);
+        const createRes = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": globalKey
+          },
+          body: JSON.stringify({
+            instanceName: name,
+            token: crmToken,
+            qrcode: true
+          })
+        });
+
+        if (createRes.ok) {
+          // Re-fetch all instances to get the newly created one
+          const reAllRes = await fetch(`${EVOLUTION_API_URL}/instance/fetchInstances`, {
+            headers: { "apikey": globalKey }
+          });
+          if (reAllRes.ok) {
+            const reAllData = await reAllRes.json();
+            crmInst = reAllData?.find((inst: any) => inst.name === name || inst.instanceName === name);
+          }
+        }
+      }
+
+      if (!crmInst) {
+        return res.json({
+          success: true,
+          exists: false,
+          connected: false,
+          instanceName: name,
+          qrcode: "",
+          jid: ""
+        });
+      }
+
+      // Check current connection state
+      const stateRes = await fetch(`${EVOLUTION_API_URL}/instance/connectionState/${name}`, {
+        headers: { "apikey": globalKey }
+      });
+      let connected = false;
+      let qrcode = "";
+      
+      if (stateRes.ok) {
+        const stateData = await stateRes.json();
+        connected = stateData?.instance?.state === "open";
+      }
+
+      // If disconnected, try to get QR code by hitting connect endpoint
+      if (!connected) {
+        const connectRes = await fetch(`${EVOLUTION_API_URL}/instance/connect/${name}`, {
+          headers: { "apikey": globalKey }
+        });
+        if (connectRes.ok) {
+          const connectData = await connectRes.json();
+          qrcode = connectData?.base64 || connectData?.qrcode?.base64 || "";
+        }
+      }
+
+      res.json({
+        success: true,
+        exists: true,
+        connected: connected,
+        instanceName: name,
+        qrcode: qrcode,
+        jid: crmInst.ownerJid || crmInst.jid || ""
+      });
+
+    } catch (err: any) {
+      logger.error("Error fetching Evolution status:", err);
+      res.json({ 
+        success: false, 
+        exists: false, 
+        connected: false, 
+        instanceName: EVOLUTION_INSTANCE_NAME,
+        qrcode: "",
+        jid: "",
+        error: err.message || "Falha de conexão ou timeout na Evolution API" 
+      });
+    }
+  });
+
+  // POST Force Evolution API Connect (starts session & recreates QR)
+  app.post("/api/evolution/connect", async (req, res) => {
+    try {
+      const globalKey = EVOLUTION_API_KEY;
+      const name = EVOLUTION_INSTANCE_NAME;
+
+      // In standard Evolution API, calling GET /instance/connect/{name} starts connection & gets qrcode
+      const connectRes = await fetch(`${EVOLUTION_API_URL}/instance/connect/${name}`, {
+        method: "GET",
+        headers: {
+          "apikey": globalKey
+        }
+      });
+
+      if (!connectRes.ok) {
+        const errorText = await connectRes.text();
+        throw new Error(`Erro na Evolution API (Código ${connectRes.status}): ${errorText}`);
+      }
+
+      const connectData = await connectRes.json();
+      const connected = connectData?.instance?.state === "open";
+      const qrcode = connectData?.base64 || connectData?.qrcode?.base64 || "";
+
+      res.json({
+        success: true,
+        connected: connected,
+        qrcode: qrcode,
+        jid: ""
+      });
+
+    } catch (err: any) {
+      logger.error("Error in evolution connect trigger:", err);
+      res.json({ 
+        success: false, 
+        connected: false, 
+        qrcode: "",
+        jid: "",
+        error: err.message || "Falha ou timeout ao tentar iniciar conexão com a Evolution" 
+      });
+    }
+  });
+
   // Reset demo databases to original
   app.post("/api/reset", (req, res) => {
     dataStore = {
@@ -2771,10 +2978,12 @@ Quando você tiver extraído PELO MENOS o Nome e o Telefone/WhatsApp válidos da
     });
   }
 
-  // Bind to 0.0.0.0 and port 3000
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`LeadCapture backend running on http://0.0.0.0:${PORT}`);
-  });
+  // Bind to 0.0.0.0 and port 3000 if not on Vercel
+  if (!process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`LeadCapture backend running on http://0.0.0.0:${PORT}`);
+    });
+  }
 }
 
 startServer();

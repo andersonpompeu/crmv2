@@ -1,0 +1,776 @@
+{
+  "templates": [
+    {
+      "bgColor": "bg-emerald-100 text-emerald-800 border-emerald-200",
+      "name": "Academia FitLife",
+      "leadsCount": 7,
+      "fields": [
+        {
+          "name": "name",
+          "label": "Nome",
+          "type": "text",
+          "required": true
+        },
+        {
+          "label": "WhatsApp",
+          "name": "phone",
+          "required": true,
+          "type": "tel"
+        },
+        {
+          "required": false,
+          "type": "email",
+          "label": "E-mail",
+          "name": "email"
+        }
+      ],
+      "textColor": "#047857",
+      "active": true,
+      "createdAt": "2026-06-05T08:20:00Z",
+      "siteUrl": "https://academiafitlife.com",
+      "id": "academia-fit"
+    },
+    {
+      "active": true,
+      "siteUrl": "https://correiaadvogados.com",
+      "id": "advocacia-parceiros",
+      "createdAt": "2026-06-08T11:45:00Z",
+      "bgColor": "bg-amber-100 text-amber-800 border-amber-200",
+      "name": "Advocacia Correia",
+      "leadsCount": 4,
+      "textColor": "#b45309",
+      "fields": [
+        {
+          "name": "name",
+          "label": "Nome Completo",
+          "type": "text",
+          "required": true
+        },
+        {
+          "label": "DDD + Telefone",
+          "name": "phone",
+          "type": "tel",
+          "required": true
+        },
+        {
+          "required": true,
+          "type": "email",
+          "name": "email",
+          "label": "E-mail funcional"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "required": true,
+          "type": "text",
+          "label": "Nome da Mãe/Pai",
+          "name": "name"
+        },
+        {
+          "label": "WhatsApp de Contato",
+          "name": "phone",
+          "required": true,
+          "type": "tel"
+        },
+        {
+          "required": true,
+          "type": "email",
+          "label": "E-mail principal",
+          "name": "email"
+        }
+      ],
+      "textColor": "#7e22ce",
+      "leadsCount": 2,
+      "bgColor": "bg-purple-100 text-purple-800 border-purple-200",
+      "name": "Bebê & Família",
+      "createdAt": "2026-06-03T14:30:00Z",
+      "siteUrl": "https://bebeefamilia.com.br",
+      "id": "bebe-familia",
+      "active": true
+    },
+    {
+      "bgColor": "bg-sky-100 text-sky-800 border-sky-200",
+      "name": "Conserto em Casa",
+      "leadsCount": 8,
+      "textColor": "#0369a1",
+      "fields": [
+        {
+          "name": "name",
+          "label": "Nome Completo",
+          "required": true,
+          "type": "text"
+        },
+        {
+          "required": true,
+          "type": "tel",
+          "name": "phone",
+          "label": "Telefone / WhatsApp"
+        },
+        {
+          "name": "email",
+          "label": "E-mail de Contato",
+          "required": false,
+          "type": "email"
+        }
+      ],
+      "active": true,
+      "siteUrl": "https://consertoemcasa.com.br",
+      "id": "conserto-em-casa",
+      "createdAt": "2026-06-01T10:00:00Z"
+    }
+  ],
+  "leads": [
+    {
+      "notified": true,
+      "name": "Carlos Silva",
+      "address": "Av. Paulista, 1000 - Bela Vista, São Paulo - SP",
+      "location": "Av. Paulista, 1000 - Bela Vista, São Paulo - SP",
+      "templateName": "Conserto em Casa",
+      "email": "carlos.silva@outlook.com",
+      "status": "Em Atendimento",
+      "phone": "(11) 98765-4321",
+      "createdAt": "2026-06-10T14:32:00Z",
+      "id": "lead-1",
+      "metadata": {
+        "browser": "Chrome (v122) / Windows 11",
+        "longitude": -46.65596,
+        "latitude": -23.56152,
+        "referrer": "https://consertoemcasa.com.br/orcamento-maquina"
+      },
+      "templateId": "conserto-em-casa",
+      "notes": "Ligado hoje de manhã, agendou reparo na máquina de lavar para sábado."
+    },
+    {
+      "notified": false,
+      "name": "Anderson Ferreira Pompeu",
+      "address": "Rua Duque de Caxias,1243",
+      "id": "lead-1781222223323-267",
+      "createdAt": "2026-06-11T23:57:03.323Z",
+      "templateId": "conserto-em-casa",
+      "metadata": {
+        "browser": "Simulador Interno Dashboard (v2.4)",
+        "referrer": "https://test-sandbox.leadcapture.io/simulador-embed-test",
+        "latitude": -23.550632,
+        "longitude": -46.656514
+      },
+      "notes": "adadaddd",
+      "location": "Rua Duque de Caxias,1243",
+      "description": "adadaddd",
+      "email": "",
+      "templateName": "Conserto em Casa",
+      "phone": "44999998163",
+      "status": "Recusado"
+    },
+    {
+      "notes": "",
+      "createdAt": "2026-06-12T00:06:37.018Z",
+      "id": "lead-1781222797018-232",
+      "metadata": {
+        "latitude": -23.559152,
+        "referrer": "https://academia-fit.co/lead-prospect-landing",
+        "longitude": -46.662127,
+        "browser": "Simulador Automático de webhook"
+      },
+      "templateId": "academia-fit",
+      "status": "Em Atendimento",
+      "phone": "(51) 99188-7711",
+      "location": "",
+      "description": "",
+      "templateName": "Academia FitLife",
+      "email": "contato.helena@vargas.com.br",
+      "address": "",
+      "notified": false,
+      "name": "Guilherme Rezende"
+    },
+    {
+      "address": "",
+      "notified": false,
+      "name": "Eduardo Teixeira",
+      "status": "Em Atendimento",
+      "phone": "(21) 97415-3040",
+      "location": "",
+      "description": "",
+      "operatorNotifiedOfAcceptance": false,
+      "templateName": "Advocacia Correia",
+      "email": "paty.barbosa@outlook.com",
+      "notes": "\n[SISTEMA - EXPIRADO: O profissional Dr. Roberto Correia não atendeu ao encaminhamento dentro do limite de 15 minutos em 12/06/2026, 01:36:18. O lead foi desbloqueado para nova oportunidade de atendimento.]",
+      "createdAt": "2026-06-12T00:06:39.634Z",
+      "id": "lead-1781222799634-568",
+      "metadata": {
+        "longitude": -43.189429,
+        "latitude": -22.984276,
+        "referrer": "https://advocacia-parceiros.co/lead-prospect-landing",
+        "browser": "Simulador Automático de webhook"
+      },
+      "templateId": "advocacia-parceiros"
+    },
+    {
+      "forwardedAt": "2026-06-12T00:58:04.415Z",
+      "reviewTokenExpiresAt": "2026-07-13T09:22:49.356Z",
+      "reviewToken": "rev-vhvf6o4wdd4b0d5d6l",
+      "address": "",
+      "notified": false,
+      "name": "Helena Rezende",
+      "notes": "\n[SISTEMA - Chamado aceito pelo profissional Marcos Leandro em 12/06/2026, 00:58:38]",
+      "createdAt": "2026-06-12T00:57:40.910Z",
+      "id": "lead-1781225860910-600",
+      "reviewedAt": "2026-06-13T09:23:18.532Z",
+      "metadata": {
+        "browser": "Simulador Automático de webhook",
+        "referrer": "https://conserto-em-casa.co/lead-prospect-landing",
+        "longitude": -43.934722,
+        "latitude": -19.940557
+      },
+      "assignedProfessionalId": "prof-3",
+      "templateId": "conserto-em-casa",
+      "forwardToken": "fwd-ys34sp0vt",
+      "status": "Concluído",
+      "phone": "(31) 98877-6655",
+      "acceptedAt": "2026-06-12T00:58:38.862Z",
+      "location": "",
+      "description": "",
+      "forwardExpiresAt": "2026-06-12T01:13:04.415Z",
+      "operatorNotifiedOfAcceptance": true,
+      "templateName": "Conserto em Casa",
+      "email": "edu.cardoso@yahoo.com"
+    },
+    {
+      "forwardedAt": "2026-06-12T01:20:02.797Z",
+      "estimatedValue": 120,
+      "address": "",
+      "name": "Guilherme Barbosa",
+      "notified": false,
+      "notes": "\n[SISTEMA - Chamado aceito pelo profissional Gabriela Mendes em 12/06/2026, 01:20:37 com valor estimado do serviço de R$ 120.00]",
+      "id": "lead-1781227152347-221",
+      "createdAt": "2026-06-12T01:19:12.347Z",
+      "templateId": "bebe-familia",
+      "assignedProfessionalId": "prof-2",
+      "metadata": {
+        "browser": "Simulador Automático de webhook",
+        "referrer": "https://bebe-familia.co/lead-prospect-landing",
+        "latitude": -23.550668,
+        "longitude": -46.676906
+      },
+      "forwardToken": "fwd-rx62hcq1w",
+      "acceptedAt": "2026-06-12T01:20:37.290Z",
+      "phone": "(11) 98112-2200",
+      "status": "Em Atendimento",
+      "description": "",
+      "location": "",
+      "forwardExpiresAt": "2026-06-12T01:35:02.797Z",
+      "operatorNotifiedOfAcceptance": true,
+      "email": "contato.helena@vargas.com.br",
+      "templateName": "Bebê & Família"
+    },
+    {
+      "estimatedValue": 300,
+      "address": "",
+      "notified": false,
+      "name": "Eduardo Frota",
+      "status": "Novo",
+      "phone": "(51) 99188-7711",
+      "operatorNotifiedOfAcceptance": false,
+      "description": "",
+      "location": "",
+      "templateName": "Advocacia Correia",
+      "email": "paty.barbosa@outlook.com",
+      "notes": "\n[SISTEMA - Chamado aceito pelo profissional Dr. Roberto Correia em 12/06/2026, 01:21:47 com valor estimado do serviço de R$ 300.00]\n[SISTEMA - EXPIRADO: O profissional Dr. Roberto Correia não atendeu ao encaminhamento dentro do limite de 15 minutos em 12/06/2026, 11:30:11. O lead foi desbloqueado para nova oportunidade de atendimento.]\n[SISTEMA - EXPIRADO: O profissional Anderson Ferreira Pompeu não atendeu ao encaminhamento dentro do limite de 15 minutos em 13/06/2026, 00:41:08. O lead foi desbloqueado para nova oportunidade de atendimento.]",
+      "createdAt": "2026-06-12T01:21:00.704Z",
+      "id": "lead-1781227260704-897",
+      "metadata": {
+        "browser": "Simulador Automático de webhook",
+        "longitude": -46.680345,
+        "latitude": -23.559662,
+        "referrer": "https://advocacia-parceiros.co/lead-prospect-landing"
+      },
+      "templateId": "advocacia-parceiros"
+    },
+    {
+      "notes": "\n[SISTEMA - Chamado aceito pelo profissional Marcos Leandro em 12/06/2026, 01:22:39 com valor estimado do serviço de R$ 500.00]\n[SISTEMA - EXPIRADO: O profissional Marcos Leandro não atendeu ao encaminhamento dentro do limite de 15 minutos em 12/06/2026, 11:30:03. O lead foi desbloqueado para nova oportunidade de atendimento.]\n[SISTEMA - EXPIRADO: O profissional Marcos Leandro não atendeu ao encaminhamento dentro do limite de 15 minutos em 12/06/2026, 12:23:21. O lead foi desbloqueado para nova oportunidade de atendimento.]",
+      "metadata": {
+        "browser": "Simulador Automático de webhook",
+        "longitude": -46.657004,
+        "latitude": -23.568944,
+        "referrer": "https://conserto-em-casa.co/lead-prospect-landing"
+      },
+      "templateId": "conserto-em-casa",
+      "createdAt": "2026-06-12T01:21:56.618Z",
+      "id": "lead-1781227316617-426",
+      "status": "Recusado",
+      "phone": "(11) 98112-2200",
+      "templateName": "Conserto em Casa",
+      "email": "camila.nasc@uol.com.br",
+      "description": "",
+      "operatorNotifiedOfAcceptance": false,
+      "location": "",
+      "reviewToken": "rev-nixt52j2ek81aah3ax",
+      "reviewTokenExpiresAt": "2026-07-13T09:22:21.294Z",
+      "address": "",
+      "estimatedValue": 500,
+      "name": "Eduardo Teixeira",
+      "notified": false
+    },
+    {
+      "notes": "preciso de um servilio de geladeira\n[SISTEMA - Chamado aceito pelo profissional Dr. Roberto Correia em 12/06/2026, 12:11:57 com valor estimado do serviço de R$ 400.00]\n[SISTEMA - EXPIRADO: O profissional Dr. Roberto Correia não atendeu ao encaminhamento dentro do limite de 15 minutos em 13/06/2026, 01:17:06. O lead foi desbloqueado para nova oportunidade de atendimento.]",
+      "createdAt": "2026-06-12T12:10:20.004Z",
+      "id": "lead-1781266220004-186",
+      "metadata": {
+        "longitude": -46.64213,
+        "latitude": -23.555993,
+        "referrer": "https://test-sandbox.leadcapture.io/simulador-embed-test",
+        "browser": "Simulador Interno Dashboard (v2.4)"
+      },
+      "templateId": "academia-fit",
+      "status": "Novo",
+      "acceptedAt": "2026-06-12T12:11:57.934Z",
+      "phone": "44999998163",
+      "description": "preciso de um servilio de geladeira",
+      "operatorNotifiedOfAcceptance": true,
+      "location": "Rua Duque de Caxias,1243",
+      "templateName": "Academia FitLife",
+      "email": "",
+      "city": "Sarandi",
+      "estimatedValue": 400,
+      "address": "Rua Duque de Caxias,1243",
+      "notified": false,
+      "name": "Gabriela"
+    },
+    {
+      "address": "Rua Duque de Caxias,1243",
+      "name": "Anderson Ferreira Pompeu",
+      "notified": false,
+      "city": "Sarandi",
+      "status": "Novo",
+      "phone": "44999998163",
+      "templateName": "Academia FitLife",
+      "email": "",
+      "location": "Rua Duque de Caxias,1243, Sarandi",
+      "description": "dfdfdfdfdfdfsdfs",
+      "notes": "dfdfdfdfdfdfsdfs",
+      "metadata": {
+        "referrer": "https://test-sandbox.leadcapture.io/simulador-embed-test",
+        "browser": "Simulador Interno Dashboard (v2.4)"
+      },
+      "templateId": "academia-fit",
+      "createdAt": "2026-06-13T01:14:48.675Z",
+      "id": "lead-1781313288675-711"
+    },
+    {
+      "email": "edu.cardoso@yahoo.com",
+      "templateName": "Conserto em Casa",
+      "location": "SCLS Quadra 302, Bloco B, Asa Sul, Brasília",
+      "description": "Gostaria de agendar ensaio de newborn com urgência.",
+      "phone": "(61) 99111-4455",
+      "status": "Encaminhado",
+      "templateId": "conserto-em-casa",
+      "metadata": {
+        "browser": "Simulador Automático de webhook",
+        "referrer": "https://conserto-em-casa.co/lead-prospect-landing"
+      },
+      "id": "lead-1781342631132-519",
+      "createdAt": "2026-06-13T09:23:51.133Z",
+      "notes": "Gostaria de agendar ensaio de newborn com urgência.",
+      "name": "Camila Vargas",
+      "notified": false,
+      "address": "SCLS Quadra 302, Bloco B, Asa Sul",
+      "city": "Brasília"
+    },
+    {
+      "phone": "(41) 99341-2099",
+      "email": "bruno@gmail.com",
+      "location": "Rua XV de Novembro, 800, Centro",
+      "operatorNotifiedOfAcceptance": false,
+      "metadata": {
+        "referrer": "https://advocacia-parceiros.co/lead-prospect-landing",
+        "browser": "Simulador Automático de webhook"
+      },
+      "id": "lead-1781342636477-733",
+      "estimatedValue": 300,
+      "notified": false,
+      "name": "Camila Teixeira",
+      "reviewToken": "rev-yrau7opvl33ptls6pj",
+      "forwardedAt": "2026-06-13T09:24:36.826Z",
+      "acceptedAt": "2026-06-13T09:24:58.429Z",
+      "status": "Concluído",
+      "forwardToken": "fwd-bgppl9hjn",
+      "templateName": "Advocacia Correia",
+      "forwardExpiresAt": "2026-06-13T09:39:36.826Z",
+      "description": "Solicito reparo de vazamento na pia do banheiro.",
+      "notes": "Solicito reparo de vazamento na pia do banheiro.\n[SISTEMA - Chamado aceito pelo profissional Anderson Ferreira Pompeu em 13/06/2026, 09:24:58 com valor estimado do serviço de R$ 300.00]",
+      "templateId": "advocacia-parceiros",
+      "assignedProfessionalId": "prof-1781310245244",
+      "reviewedAt": "2026-06-13T09:25:42.844Z",
+      "createdAt": "2026-06-13T09:23:56.477Z",
+      "address": "Rua XV de Novembro, 800, Centro",
+      "city": "Curitiba",
+      "reviewTokenExpiresAt": "2026-07-13T09:25:24.588Z"
+    },
+    {
+      "phone": "44999998163",
+      "status": "Novo",
+      "email": "",
+      "templateName": "Academia FitLife",
+      "operatorNotifiedOfAcceptance": false,
+      "location": "Sarandi",
+      "description": "Me ajuded hoje",
+      "notes": "Me ajuded hoje\n[SISTEMA - EXPIRADO: O profissional Anderson Ferreira Pompeu não atendeu ao encaminhamento dentro do limite de 15 minutos em 13/06/2026, 19:15:33. O lead foi desbloqueado para nova oportunidade de atendimento.]",
+      "templateId": "academia-fit",
+      "metadata": {
+        "referrer": "https://test-sandbox.leadcapture.io/simulador-embed-test",
+        "browser": "Simulador Interno Dashboard (v2.4)"
+      },
+      "id": "lead-1781375661963-984",
+      "createdAt": "2026-06-13T18:34:21.963Z",
+      "address": "Rua Duque de Caxias,1243",
+      "notified": false,
+      "name": "anderson",
+      "city": "Sarandi"
+    },
+    {
+      "phone": "(21) 99123-4567",
+      "status": "Em Atendimento",
+      "email": "mari.costa@gmail.com",
+      "templateName": "Bebê & Família",
+      "location": "Av. Atlântica, 1702 - Copacabana, Rio de Janeiro - RJ",
+      "notes": "Interessada no ensaio de Newborn de julho. Precisa de orçamento urgente.",
+      "templateId": "bebe-familia",
+      "metadata": {
+        "browser": "Safari / iPhone / iOS 17",
+        "latitude": -22.96912,
+        "longitude": -43.18182,
+        "referrer": "https://bebeefamilia.com.br/promocao-ensaio"
+      },
+      "id": "lead-2",
+      "createdAt": "2026-06-10T16:45:00Z",
+      "address": "Av. Atlântica, 1702 - Copacabana, Rio de Janeiro - RJ",
+      "name": "Mariana Costa",
+      "notified": true
+    },
+    {
+      "notes": "Fechou o plano anual Gold presencialmente. Matrícula efetuada com sucesso.",
+      "templateId": "academia-fit",
+      "metadata": {
+        "browser": "Firefox (v124) / macOS Sonoma",
+        "longitude": -43.93812,
+        "latitude": -19.93208,
+        "referrer": "https://academiafitlife.com/ganhe-uma-aula-experimental"
+      },
+      "id": "lead-3",
+      "createdAt": "2026-06-09T09:15:00Z",
+      "phone": "(31) 98122-3344",
+      "status": "Recusado",
+      "email": "rodrigo.m@yahoo.com.br",
+      "templateName": "Academia FitLife",
+      "location": "Praça da Liberdade, 350 - Funcionários, Belo Horizonte - MG",
+      "address": "Praça da Liberdade, 350 - Funcionários, Belo Horizonte - MG",
+      "name": "Rodrigo Mendonça",
+      "notified": true
+    },
+    {
+      "name": "Ana Paula Ramos",
+      "notified": true,
+      "email": "ana.ramos@bol.com.br",
+      "templateName": "Conserto em Casa",
+      "phone": "(19) 97401-2099",
+      "status": "Arquivado",
+      "templateId": "conserto-em-casa",
+      "metadata": {
+        "referrer": "https://consertoemcasa.com.br/contato",
+        "browser": "Edge (v123) / Windows 10"
+      },
+      "id": "lead-4",
+      "createdAt": "2026-06-08T11:04:00Z",
+      "notes": "Contato duplicado. Arquivado para evitar poluição no painel."
+    },
+    {
+      "notes": "Interesse em assessoria para planejamento tributário de Simples Nacional.\n[SISTEMA - Chamado aceito pelo profissional Anderson Ferreira Pompeu em 13/06/2026, 00:36:17 com valor estimado do serviço de R$ 200.00]",
+      "metadata": {
+        "latitude": -23.55834,
+        "longitude": -46.66102,
+        "referrer": "https://correiaadvogados.com/tributario-reforma",
+        "browser": "Chrome / Android"
+      },
+      "assignedProfessionalId": "prof-1781310245244",
+      "templateId": "advocacia-parceiros",
+      "createdAt": "2026-06-10T22:15:00Z",
+      "id": "lead-5",
+      "status": "Em Atendimento",
+      "acceptedAt": "2026-06-13T00:36:17.236Z",
+      "phone": "(11) 91102-3040",
+      "forwardToken": "fwd-9cjvge162",
+      "templateName": "Advocacia Correia",
+      "email": "felipe.oliveira@adv.fe.com",
+      "operatorNotifiedOfAcceptance": true,
+      "forwardExpiresAt": "2026-06-13T00:50:49.011Z",
+      "location": "Rua Augusta, 1500 - Consolação, São Paulo - SP",
+      "forwardedAt": "2026-06-13T00:35:49.011Z",
+      "address": "Rua Augusta, 1500 - Consolação, São Paulo - SP",
+      "estimatedValue": 200,
+      "notified": true,
+      "name": "Felipe Mendes Oliveira"
+    },
+    {
+      "address": "Av. Brigadeiro Faria Lima, 3477 - Itaim Bibi, São Paulo - SP",
+      "name": "Gustavo Antunes",
+      "notified": true,
+      "status": "Encaminhado",
+      "phone": "(11) 99887-6655",
+      "location": "Av. Brigadeiro Faria Lima, 3477 - Itaim Bibi, São Paulo - SP",
+      "operatorNotifiedOfAcceptance": false,
+      "templateName": "Conserto em Casa",
+      "email": "gustavolins@terra.com.br",
+      "notes": "Vazamento na cozinha do apartamento. Solicita visita emergencial.\n[SISTEMA - EXPIRADO: O profissional Dr. Roberto Correia não atendeu ao encaminhamento dentro do limite de 15 minutos em 11/06/2026, 23:22:16. O lead foi desbloqueado para nova oportunidade de atendimento.]",
+      "createdAt": "2026-06-10T23:55:00Z",
+      "id": "lead-6",
+      "metadata": {
+        "browser": "Chrome Mobile / Android",
+        "referrer": "https://consertoemcasa.com.br/vazamentos-urgentes",
+        "longitude": -46.68114,
+        "latitude": -23.58552
+      },
+      "templateId": "conserto-em-casa"
+    },
+    {
+      "name": "Anderson",
+      "notified": false,
+      "address": "",
+      "id": "lead-chat-1781223058200-971",
+      "createdAt": "2026-06-12T00:10:58.200Z",
+      "templateId": "conserto-em-casa",
+      "metadata": {
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+        "latitude": -23.563386,
+        "longitude": -46.662693,
+        "referrer": "https://test-sandbox.leadcapture.io/chatbot-conserto-em-casa"
+      },
+      "notes": "Consertar máquina de lavar\n[ID Conversa: conv-1781222996277] [Atualizado via Chatbot IA]",
+      "description": "Consertar máquina de lavar",
+      "location": "",
+      "email": "",
+      "templateName": "Conserto em Casa",
+      "phone": "44999986132",
+      "status": "Recusado"
+    },
+    {
+      "notes": "Conserto de geladeira\n[ID Conversa: conv-1781229606873]",
+      "metadata": {
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+        "referrer": "https://test-sandbox.leadcapture.io/chatbot-academia-fit",
+        "latitude": -23.562979,
+        "longitude": -46.677459
+      },
+      "templateId": "academia-fit",
+      "createdAt": "2026-06-12T02:01:26.286Z",
+      "id": "lead-chat-1781229686286-337",
+      "status": "Em Atendimento",
+      "phone": "44556678990",
+      "templateName": "Academia FitLife",
+      "email": "",
+      "location": "",
+      "description": "Conserto de geladeira",
+      "address": "",
+      "name": "Anderson",
+      "notified": false
+    }
+  ],
+  "alertConfig": {
+    "emailEnabled": true,
+    "whatsappEnabled": true,
+    "whatsappNumber": "(11) 98888-7777",
+    "soundEnabled": true,
+    "osNotificationEnabled": true,
+    "emailAddress": "anderson.ferreira.pompeu@gmail.com"
+  },
+  "professionals": [
+    {
+      "name": "Dr. Roberto Correia Test",
+      "specialty": "Advocacia Tributária",
+      "email": "roberto.correia@advocacia.com.br",
+      "photoUrl": "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80",
+      "profitRecords": [
+        {
+          "id": "pr-1",
+          "description": "Consultoria Tributária Escopo Simples",
+          "date": "2026-06-05",
+          "value": 1500
+        },
+        {
+          "description": "Planejamento Sucessório Familiar",
+          "id": "pr-2",
+          "value": 4200,
+          "date": "2026-06-09"
+        },
+        {
+          "date": "2026-06-12",
+          "value": 300,
+          "id": "fwd-acc-1781227307464",
+          "description": "Novo Lead Aceito: Eduardo Frota (Chamado #lead-1781227260704-897) - Canal: Advocacia Correia"
+        },
+        {
+          "date": "2026-06-12",
+          "value": 400,
+          "id": "fwd-acc-1781266317936",
+          "description": "Novo Lead Aceito: Gabriela (Chamado #lead-1781266220004-186) - Canal: Academia FitLife"
+        },
+        {
+          "date": "2026-06-12",
+          "value": 300,
+          "id": "fwd-acc-1781267816337",
+          "description": "Novo Lead Aceito: Maria do Santos (Chamado #lead-1781267458984-109) - Canal: Academia FitLife"
+        }
+      ],
+      "phone": "(11) 98888-1122",
+      "createdAt": "2026-06-01T09:00:00Z",
+      "id": "prof-1",
+      "templateId": "advocacia-parceiros"
+    },
+    {
+      "name": "Anderson Ferreira Pompeu",
+      "specialty": "Eletricista",
+      "email": "anderson.ferreira.pompeu@gmail.com",
+      "photoUrl": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
+      "phone": "44999998163",
+      "username": "pompeu",
+      "profitRecords": [
+        {
+          "value": 200,
+          "date": "2026-06-13",
+          "id": "fwd-acc-1781310977237",
+          "description": "Novo Lead Aceito: Felipe Mendes Oliveira (Chamado #lead-5) - Canal: Advocacia Correia"
+        },
+        {
+          "date": "2026-06-13",
+          "value": 300,
+          "id": "fwd-acc-1781342698430",
+          "description": "Novo Lead Aceito: Camila Teixeira (Chamado #lead-1781342636477-733) - Canal: Advocacia Correia"
+        }
+      ],
+      "createdAt": "2026-06-13T00:24:05.244Z",
+      "id": "prof-1781310245244",
+      "templateId": "conserto-em-casa",
+      "password": "12345",
+      "reviewStats": {
+        "total": 1,
+        "average": 5,
+        "distribution": {
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 1
+        }
+      }
+    },
+    {
+      "name": "Gabriela Mendes",
+      "specialty": "Fotografia Newborn & Gestantes",
+      "email": "gabriela.mendes@fotoestudio.com",
+      "phone": "(21) 97766-3344",
+      "profitRecords": [
+        {
+          "id": "pr-3",
+          "description": "Ensaio Newborn Premium",
+          "value": 950,
+          "date": "2026-06-06"
+        },
+        {
+          "id": "pr-4",
+          "description": "Sessão Gestante Externa",
+          "value": 1250,
+          "date": "2026-06-08"
+        },
+        {
+          "value": 120,
+          "date": "2026-06-12",
+          "description": "Novo Lead Aceito: Guilherme Barbosa (Chamado #lead-1781227152347-221) - Canal: Bebê & Família",
+          "id": "fwd-acc-1781227237290"
+        }
+      ],
+      "photoUrl": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+      "templateId": "bebe-familia",
+      "createdAt": "2026-06-02T11:30:00Z",
+      "id": "prof-2"
+    },
+    {
+      "specialty": "Climatização & Reparos Domésticos",
+      "name": "Marcos Leandro",
+      "email": "marcos.reparos.express@gmail.com",
+      "photoUrl": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=150&auto=format&fit=crop&q=80",
+      "profitRecords": [
+        {
+          "date": "2026-06-04",
+          "value": 350,
+          "description": "Instalação Ar Condicionado Split",
+          "id": "pr-5"
+        },
+        {
+          "description": "Eletro-Reparo Máquina de Lavar",
+          "id": "pr-6",
+          "date": "2026-06-07",
+          "value": 480
+        },
+        {
+          "date": "2026-06-09",
+          "value": 220,
+          "description": "Conserto Vazamento Válvula de Descarga",
+          "id": "pr-7"
+        },
+        {
+          "id": "fwd-acc-1781225918862",
+          "description": "Novo Lead Aceito: Helena Rezende (Chamado #lead-1781225860910-600) - Canal: Conserto em Casa",
+          "value": 0,
+          "date": "2026-06-12"
+        },
+        {
+          "date": "2026-06-12",
+          "value": 500,
+          "description": "Novo Lead Aceito: Eduardo Teixeira (Chamado #lead-1781227316617-426) - Canal: Conserto em Casa",
+          "id": "fwd-acc-1781227359057"
+        }
+      ],
+      "phone": "(11) 99331-4455",
+      "id": "prof-3",
+      "createdAt": "2026-06-03T15:20:00Z",
+      "templateId": "conserto-em-casa",
+      "reviewStats": {
+        "average": 5,
+        "distribution": {
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 1
+        },
+        "total": 1
+      }
+    }
+  ],
+  "whatsappTemplates": [
+    {
+      "name": "Template Padrão de Encaminhamento",
+      "content": "Olá, *{nome_profissional}*! Nova captação de serviço disponível [LeadCapture]:\n👤 *Cliente:* {nome_cliente}\n📞 *WhatsApp:* {fone_cliente}\n📍 *Local de Atendimento:* {endereco_cliente}\n🛠️ *Serviço:* {nome_servico}\n📝 *Detalhes:* {descricao_servico}\n\n👉 Acesse o link seguro abaixo para validar seu telefone e aceitar ou recusar o chamado:\n🔗 {link_unico}\n\n⚠️ *Atenção:* Este link expira em no máximo {validade_horas} horas por segurança.",
+      "id": "fwd-default",
+      "isDefault": true
+    },
+    {
+      "content": "🚨 *CHAMADO DE URGÊNCIA - {nome_profissional}* 🚨\n\nOlá! Há uma nova solicitação imediata:\n👤 *Cliente:* {nome_cliente}\n📞 *WhatsApp:* {fone_cliente}\n📍 *Local:* {endereco_cliente}\n🛠️ *Serviço urgentíssimo:* {nome_servico}\n📝 *Descrição:* {descricao_servico}\n\n⚠️ *Ação necessária:* Verifique os detalhes e responda imediatamente no link abaixo:\n🔗 {link_unico}\n\nLink válido por {validade_horas} horas.",
+      "name": "Aviso Urgência 🚨",
+      "isDefault": false,
+      "id": "fwd-urgente"
+    }
+  ],
+  "reviews": [],
+  "webhookLogs": [
+    {
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+      "ipAddress": "2804:3c74:133:c300:ea85:632c:40d1:219e, 169.254.169.126",
+      "status": 201,
+      "id": "log-1781375661963-921",
+      "timestamp": "2026-06-13T18:34:21.963Z",
+      "payload": "{\"name\":\"anderson\",\"phone\":\"44999998163\",\"address\":\"Rua Duque de Caxias,1243\",\"city\":\"Sarandi\",\"description\":\"Me ajuded hoje\",\"templateId\":\"academia-fit\",\"referrer\":\"https://test-sandbox.leadcapture.io/simulador-embed-test\",\"browserInfo\":\"Simulador Interno Dashboard (v2.4)\"}",
+      "templateName": "Academia FitLife"
+    }
+  ]
+}

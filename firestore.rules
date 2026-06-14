@@ -84,10 +84,10 @@ service cloud.firestore {
         && data.timestamp is string && data.timestamp.size() <= 100
         && data.payload is string && data.payload.size() <= 200000
         && (data.status is int || data.status is float)
-        && (data.get('errorMessage', '') is string || data.get('errorMessage', null) == null)
-        && (data.get('userAgent', '') is string || data.get('userAgent', null) == null)
-        && (data.get('ipAddress', '') is string || data.get('ipAddress', null) == null)
-        && (data.get('templateName', '') is string || data.get('templateName', null) == null);
+        && (!('errorMessage' in data) || data.errorMessage is string)
+        && (!('userAgent' in data) || data.userAgent is string)
+        && (!('ipAddress' in data) || data.ipAddress is string)
+        && (!('templateName' in data) || data.templateName is string);
     }
 
     // 1. Leads

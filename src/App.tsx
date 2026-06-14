@@ -97,6 +97,18 @@ export default function App() {
     osNotificationEnabled: true
   });
 
+  // Evolution API Connection Status State
+  const [evolutionStatus, setEvolutionStatus] = useState<{
+    connected: boolean;
+    exists: boolean;
+    qrcode: string;
+    jid: string;
+    instanceName: string;
+    error?: string;
+  } | null>(null);
+  const [loadingEvolution, setLoadingEvolution] = useState(false);
+  const [triggeringEvolutionConnect, setTriggeringEvolutionConnect] = useState(false);
+
   // Professionals & Financial state
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(null);
@@ -112,6 +124,18 @@ export default function App() {
   const [profTemplateId, setProfTemplateId] = useState("");
   const [profUsername, setProfUsername] = useState("");
   const [profPassword, setProfPassword] = useState("");
+
+  // Custom non-blocking modal replacement for alert/confirm in cross-origin iframe sandboxes
+  const [appAlert, setAppAlert] = useState<{ show: boolean; title: string; message: string; type: "success" | "error" | "info" } | null>(null);
+  const [appConfirm, setAppConfirm] = useState<{ show: boolean; title: string; message: string; onConfirm: () => void } | null>(null);
+
+  const triggerAppAlert = (message: string, type: "success" | "error" | "info" = "info", title: string = "Aviso") => {
+    setAppAlert({ show: true, title, message, type });
+  };
+
+  const triggerAppConfirm = (message: string, onConfirm: () => void, title: string = "Confirmar Ação") => {
+    setAppConfirm({ show: true, title, message, onConfirm });
+  };
 
   // Professional independent authenticated portal states
   const [loggedInProf, setLoggedInProf] = useState<Professional | null>(null);
@@ -175,6 +199,7 @@ export default function App() {
 
   // Template creation dialog state
   const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false);
+  const [editingChannel, setEditingChannel] = useState<Template | null>(null);
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateUrl, setNewTemplateUrl] = useState("");
   const [newTemplateFields, setNewTemplateFields] = useState([
@@ -1090,36 +1115,153 @@ export default function App() {
     }
   };
 
-  // Create new template
-  const handleCreateTemplate = async (e: React.FormEvent) => {
+  const openCreateChannelModal = () => {
+    setEditingChannel(null);
+    setNewTemplateName("");
+    setNewTemplateUrl("");
+    setShowCreateTemplateModal(true);
+  };
+
+  const openEditChannelModal = (theme: Template) => {
+    setEditingChannel(theme);
+    setNewTemplateName(theme.name);
+    setNewTemplateUrl(theme.siteUrl);
+    setShowCreateTemplateModal(true);
+  };
+
+  // Create or update template
+  const handleCreateOrUpdateChannelTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTemplateName.trim() || !newTemplateUrl.trim()) {
-      alert("Preencha todos os campos básicos.");
+      triggerAppAlert("Preencha todos os campos básicos.", "error");
       return;
     }
 
     try {
-      const response = await fetch("/api/templates", {
-        method: "POST",
+      const url = editingChannel ? `/api/templates/${editingChannel.id}` : "/api/templates";
+      const method = editingChannel ? "PUT" : "POST";
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newTemplateName,
           siteUrl: newTemplateUrl,
-          fields: newTemplateFields
+          ...(editingChannel ? {} : { fields: newTemplateFields })
         })
       });
       if (response.ok) {
-        const created = await response.json();
-        setTemplates([...templates, created]);
+        const saved = await response.json();
+        if (editingChannel) {
+          setTemplates(templates.map(t => t.id === editingChannel.id ? saved : t));
+          triggerAppAlert("Canal de captura atualizado com sucesso!", "success");
+        } else {
+          setTemplates([...templates, saved]);
+          triggerAppAlert("Canal de captura adicionado com sucesso!", "success");
+        }
         setShowCreateTemplateModal(false);
+        setEditingChannel(null);
         setNewTemplateName("");
         setNewTemplateUrl("");
-        alert("Template de captura adicionado com sucesso!");
+      } else {
+        const errData = await response.json();
+        triggerAppAlert(errData.error || "Erro ao salvar canal de captura.", "error");
       }
     } catch (err) {
       console.error(err);
+      triggerAppAlert("Erro de rede ao salvar canal de captura.", "error");
     }
   };
+
+  const fetchEvolutionStatus = async (silent = false) => {
+    if (!silent) setLoadingEvolution(true);
+    try {
+      const res = await fetch("/api/evolution/status");
+      if (res.ok) {
+        const data = await res.json();
+        setEvolutionStatus({
+          connected: !!data.connected,
+          exists: !!data.exists,
+          qrcode: data.qrcode || "",
+          jid: data.jid || "",
+          instanceName: data.instanceName || "crm",
+          error: data.error || ""
+        });
+      } else {
+        const errText = await res.text();
+        setEvolutionStatus({
+          connected: false,
+          exists: false,
+          qrcode: "",
+          jid: "",
+          instanceName: "crm",
+          error: `Erro HTTP ${res.status}: ${errText}`
+        });
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch Evolution status:", err);
+      setEvolutionStatus({
+        connected: false,
+        exists: false,
+        qrcode: "",
+        jid: "",
+        instanceName: "crm",
+        error: err.message || "Erro de conexão ao obter status da Evolution"
+      });
+    } finally {
+      if (!silent) setLoadingEvolution(false);
+    }
+  };
+
+  const triggerEvolutionConnect = async () => {
+    setTriggeringEvolutionConnect(true);
+    try {
+      const res = await fetch("/api/evolution/connect", { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setEvolutionStatus({
+          connected: !!data.connected,
+          exists: true,
+          qrcode: data.qrcode || "",
+          jid: data.jid || "",
+          instanceName: "crm",
+          error: data.error || ""
+        });
+      } else {
+        const errText = await res.text();
+        setEvolutionStatus({
+          connected: false,
+          exists: false,
+          qrcode: "",
+          jid: "",
+          instanceName: "crm",
+          error: `Erro HTTP ${res.status}: ${errText}`
+        });
+      }
+    } catch (err: any) {
+      console.error("Failed to connect Evolution:", err);
+      setEvolutionStatus({
+        connected: false,
+        exists: false,
+        qrcode: "",
+        jid: "",
+        instanceName: "crm",
+        error: err.message || "Falha ao requisitar sessão de conexão"
+      });
+    } finally {
+      setTriggeringEvolutionConnect(false);
+    }
+  };
+
+  // Poll Evolution status when in Notifications tab
+  useEffect(() => {
+    if (activeTab === "notifications") {
+      fetchEvolutionStatus();
+      const interval = setInterval(() => {
+        fetchEvolutionStatus(true);
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab]);
 
   // Save alert configuration
   const handleSaveAlertConfig = async (e: React.FormEvent) => {
@@ -1239,7 +1381,7 @@ export default function App() {
   const handleCreateOrUpdateProfessional = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profName.trim() || !profSpecialty.trim()) {
-      alert("Por favor, preencha Nome Completo e Especialidade.");
+      triggerAppAlert("Por favor, preencha Nome Completo e Especialidade.", "error");
       return;
     }
 
@@ -1271,18 +1413,21 @@ export default function App() {
         const data = await res.json();
         loadData(true);
         setShowAddEditProfModal(false);
-        alert(editingProfessional ? "Cadastro de profissional atualizado!" : "Profissional adicionado com sucesso!");
+        triggerAppAlert(
+          editingProfessional ? "Cadastro de profissional atualizado!" : "Profissional adicionado com sucesso!",
+          "success"
+        );
       } else {
         const err = await res.json();
-        alert(`Erro: ${err.error || "Não foi possível salvar profissional"}`);
+        triggerAppAlert(`Erro: ${err.error || "Não foi possível salvar profissional"}`, "error");
       }
     } catch (err) {
       console.error("Error saving professional:", err);
+      triggerAppAlert("Erro ao salvar cadastro do profissional.", "error");
     }
   };
 
-  const handleDeleteProfessional = async (id: string) => {
-    if (!confirm("Tem certeza de que deseja remover este profissional? Todos os seus registros financeiros vinculados serão deletados.")) return;
+  const executeDeleteProfessional = async (id: string) => {
     try {
       const res = await fetch(`/api/professionals/${id}`, { method: "DELETE" });
       if (res.ok) {
@@ -1290,13 +1435,24 @@ export default function App() {
           setSelectedProfessionalId(null);
         }
         loadData(true);
-        alert("Profissional removido com sucesso!");
+        triggerAppAlert("Profissional removido com sucesso!", "success");
       } else {
-        alert("Erro ao remover profissional.");
+        triggerAppAlert("Não foi possível excluir o profissional no momento.", "error");
       }
     } catch (err) {
       console.error(err);
+      triggerAppAlert("Erro de rede ao remover profissional.", "error");
     }
+  };
+
+  const handleDeleteProfessional = (id: string) => {
+    triggerAppConfirm(
+      "Tem certeza de que deseja remover este profissional? Todos os seus registros financeiros vinculados serão deletados.",
+      () => {
+        executeDeleteProfessional(id);
+      },
+      "Confirmar Exclusão"
+    );
   };
 
   // --- START OF WHATSAPP TEMPLATE HELPER SUBMITTERS ---
@@ -1321,7 +1477,7 @@ export default function App() {
       });
       if (!res.ok) {
         const d = await res.json();
-        alert(d.error || "Erro ao salvar template.");
+        triggerAppAlert(d.error || "Erro ao salvar template.", "error");
       } else {
         setShowAddEditTmplModal(false);
         setEditingTmpl(null);
@@ -1329,42 +1485,65 @@ export default function App() {
         setTmplContent("");
         setTmplIsDefault(false);
         await loadData(true);
+        triggerAppAlert("Template de mensagem salvo com sucesso!", "success");
       }
     } catch (err) {
       console.error(err);
-      alert("Erro de conexão ao salvar modelo.");
+      triggerAppAlert("Erro de conexão ao salvar modelo.", "error");
     } finally {
       setSavingTmpl(false);
     }
   };
 
-  const handleDeleteTemplate = async (id: string, name: string) => {
-    if (!confirm(`Tem certeza que deseja excluir o modelo "${name}"?`)) return;
+  const executeDeleteTemplate = async (id: string) => {
     try {
       const res = await fetch(`/api/whatsapp-templates/${id}`, { method: "DELETE" });
       if (res.ok) {
         await loadData(true);
+        triggerAppAlert("Template de mensagem excluído com sucesso!", "success");
       } else {
-        alert("Não foi possível excluir o modelo.");
+        triggerAppAlert("Não foi possível excluir o modelo.", "error");
       }
     } catch (err) {
       console.error(err);
+      triggerAppAlert("Erro ao excluir modelo de mensagem.", "error");
     }
   };
 
-  const handleDeleteChannelTemplate = async (id: string, name: string) => {
-    if (!confirm(`Tem certeza que deseja excluir o canal de captura "${name}"? Todos os leads deste canal de origem serão mantidos.`)) return;
+  const handleDeleteTemplate = (id: string, name: string) => {
+    triggerAppConfirm(
+      `Tem certeza que deseja excluir o modelo "${name}"?`,
+      () => {
+        executeDeleteTemplate(id);
+      },
+      "Confirmar Exclusão"
+    );
+  };
+
+  const executeDeleteChannelTemplate = async (id: string) => {
     try {
       const res = await fetch(`/api/templates/${id}`, { method: "DELETE" });
       if (res.ok) {
         await loadData(true);
+        triggerAppAlert("Canal de captura excluído com sucesso!", "success");
       } else {
         const errData = await res.json();
-        alert(errData.error || "Não foi possível excluir o canal.");
+        triggerAppAlert(errData.error || "Não foi possível excluir o canal.", "error");
       }
     } catch (err) {
       console.error(err);
+      triggerAppAlert("Erro de rede ao excluir canal de captura.", "error");
     }
+  };
+
+  const handleDeleteChannelTemplate = (id: string, name: string) => {
+    triggerAppConfirm(
+      `Tem certeza que deseja excluir o canal de captura "${name}"? Todos os leads deste canal de origem serão mantidos.`,
+      () => {
+        executeDeleteChannelTemplate(id);
+      },
+      "Confirmar Exclusão"
+    );
   };
 
   const handleSetDefaultTemplate = async (id: string) => {
@@ -3204,7 +3383,7 @@ export default function App() {
                 id="btn-create-template-top"
                 onClick={() => {
                   setActiveTab("templates");
-                  setShowCreateTemplateModal(true);
+                  openCreateChannelModal();
                 }}
                 className="bg-[#4f46e5] text-white px-3.5 py-1.5 rounded-xl text-[11px] font-bold hover:bg-[#5a52ff] shadow-[0_0_20px_rgba(79,70,229,0.35)] transition-all flex items-center gap-1 cursor-pointer"
               >
@@ -5267,11 +5446,7 @@ export default function App() {
                           <Edit3 className="w-3.5 h-3.5 text-indigo-400" /> Editar Perfil
                         </button>
                         <button
-                          onClick={() => {
-                            if (confirm("Deseja realmente remover este profissional?")) {
-                              handleDeleteProfessional(selectedProf.id);
-                            }
-                          }}
+                          onClick={() => handleDeleteProfessional(selectedProf.id)}
                           className="flex items-center gap-1.5 bg-[#0e1022] hover:bg-rose-950/20 border border-rose-900/40 text-rose-400 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5 text-rose-500" /> Remover
@@ -5889,7 +6064,7 @@ export default function App() {
                   
                   <button
                     id="btn-open-create-modal"
-                    onClick={() => setShowCreateTemplateModal(true)}
+                    onClick={openCreateChannelModal}
                     className="bg-indigo-600 text-white px-3.5 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" /> Criar Novo Template
@@ -5968,7 +6143,13 @@ export default function App() {
                           <Code2 className="w-4 h-4" /> Copiar código embed script
                         </button>
                         
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => openEditChannelModal(theme)}
+                            className="text-[10px] text-indigo-700 hover:text-indigo-950 font-semibold px-2 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition-colors cursor-pointer"
+                          >
+                            Editar
+                          </button>
                           {theme.id !== "conserto-em-casa" && theme.id !== "bebe-familia" && theme.id !== "academia-fit" && theme.id !== "advocacia-parceiros" && (
                             <button
                               onClick={() => handleDeleteChannelTemplate(theme.id, theme.name)}
@@ -5993,16 +6174,21 @@ export default function App() {
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-lg w-full p-6 space-y-4">
                       
                       <div className="flex justify-between items-center pb-2 border-b border-zinc-100">
-                        <h4 className="font-bold text-slate-800 text-base">Novo Canal de Captura</h4>
+                        <h4 className="font-bold text-slate-800 text-base">
+                          {editingChannel ? "Editar Canal de Captura" : "Novo Canal de Captura"}
+                        </h4>
                         <button 
-                          onClick={() => setShowCreateTemplateModal(false)}
+                          onClick={() => {
+                            setShowCreateTemplateModal(false);
+                            setEditingChannel(null);
+                          }}
                           className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
                         >
                           <X className="w-5 h-5" />
                         </button>
                       </div>
 
-                      <form onSubmit={handleCreateTemplate} className="space-y-4 text-xs">
+                      <form onSubmit={handleCreateOrUpdateChannelTemplate} className="space-y-4 text-xs">
                         
                         <div className="space-y-1">
                           <label className="font-semibold text-slate-700 block text-xs">Nome do Template / Negócio *</label>
@@ -6048,7 +6234,10 @@ export default function App() {
                         <div className="flex gap-2 justify-end pt-2 border-t border-slate-100">
                           <button
                             type="button"
-                            onClick={() => setShowCreateTemplateModal(false)}
+                            onClick={() => {
+                              setShowCreateTemplateModal(false);
+                              setEditingChannel(null);
+                            }}
                             className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-semibold cursor-pointer"
                           >
                             Voltar
@@ -6057,7 +6246,7 @@ export default function App() {
                             type="submit"
                             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold cursor-pointer"
                           >
-                            Concluir e Salvar Canal
+                            {editingChannel ? "Salvar Alterações" : "Concluir e Salvar Canal"}
                           </button>
                         </div>
 
@@ -7491,7 +7680,9 @@ export default function App() {
 
             {/* TAB CONTENT: 5. OUTGOING ALERTS & NOTIFICATIONS SAVER */}
             {activeTab === "notifications" && (
-              <div className="max-w-2xl bg-white rounded-xl border border-slate-200 shadow-xs p-6 space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start max-w-7xl animate-fade-in">
+                {/* Outgoing alerts setting and template manager */}
+                <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-xs p-6 space-y-6">
                 <div>
                   <h3 className="font-bold text-slate-800 text-sm">Disparos de Alertas de Integração</h3>
                   <p className="text-xs text-slate-500">Configure para onde suas notificações devem ser disparadas quando um novo prospect preencher os formulários externos.</p>
@@ -7691,7 +7882,7 @@ export default function App() {
                             >
                               Editar
                             </button>
-                            {!tmpl.isDefault && whatsappTemplates.length > 1 && (
+                            {whatsappTemplates.length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => handleDeleteTemplate(tmpl.id, tmpl.name)}
@@ -7713,6 +7904,128 @@ export default function App() {
                   </div>
 
                 </div>
+              </div>
+
+              {/* Evolution API Connection Status Card */}
+                <div className="lg:col-span-1 bg-white rounded-xl border border-slate-200 shadow-xs p-5 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <Smartphone className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider font-sans">Evolution API</h3>
+                        <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider mt-0.5 font-sans">Instância: crm</p>
+                      </div>
+                    </div>
+                    {/* Refresh Button */}
+                    <button
+                      type="button"
+                      onClick={() => fetchEvolutionStatus()}
+                      disabled={loadingEvolution}
+                      className="p-1 px-1.5 hover:bg-slate-100 rounded-md text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                      title="Atualizar Status"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${loadingEvolution ? "animate-spin" : ""}`} />
+                    </button>
+                  </div>
+
+                  {loadingEvolution && !evolutionStatus ? (
+                    <div className="space-y-3 py-4 animate-pulse">
+                      <div className="h-4 bg-slate-100 rounded-md w-2/3 mx-auto"></div>
+                      <div className="h-28 bg-slate-50 border border-dashed border-slate-200 rounded-xl"></div>
+                      <div className="h-8 bg-slate-100 rounded-md"></div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Connection State indicator badge */}
+                      {evolutionStatus?.connected ? (
+                        <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center space-y-2">
+                          <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto animate-bounce" />
+                          <div>
+                            <span className="font-bold text-emerald-800 text-xs block font-sans">Conectado com Sucesso!</span>
+                            <span className="text-[10px] text-emerald-600 block leading-normal mt-0.5 font-medium font-sans">Instância integrada para os disparos.</span>
+                          </div>
+                          {evolutionStatus.jid && (
+                            <div className="bg-white/90 border border-emerald-100 px-2.5 py-1.5 rounded-lg text-left mt-1 overflow-hidden">
+                              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block font-sans">ID do Dispositivo (JID)</span>
+                              <span className="text-[10px] text-slate-700 font-mono font-bold break-all">{evolutionStatus.jid}</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-4.5 text-center space-y-3">
+                          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mx-auto text-amber-600">
+                            <RefreshCw className={`w-5 h-5 ${loadingEvolution ? "animate-spin" : ""}`} />
+                          </div>
+                          <div>
+                            <span className="font-bold text-amber-800 text-xs block font-sans">Aparelho Desconectado</span>
+                            <span className="text-[10px] text-amber-600 block leading-normal mt-0.5 font-medium font-sans">Aponte a câmera do WhatsApp para autenticar:</span>
+                          </div>
+
+                          {evolutionStatus?.error && (
+                            <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 text-left space-y-1">
+                              <span className="font-bold text-rose-800 text-[10px] block uppercase tracking-wider font-sans">⚠️ Detalhes do Erro da API:</span>
+                              <p className="text-[10px] text-rose-600 block leading-normal font-mono break-all font-semibold max-h-[120px] overflow-y-auto bg-white/70 p-2 rounded border border-rose-100">
+                                {evolutionStatus.error}
+                              </p>
+                            </div>
+                          )}
+
+                          {evolutionStatus?.qrcode ? (
+                            <div className="space-y-3">
+                              <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 inline-block shadow-xs">
+                                <img
+                                  src={evolutionStatus.qrcode.split('|')[0]}
+                                  alt="WhatsApp QR Code"
+                                  referrerPolicy="no-referrer"
+                                  className="w-40 h-40 object-contain mx-auto"
+                                />
+                              </div>
+                              <p className="text-[10px] text-slate-500 leading-normal max-w-[200px] mx-auto font-medium font-sans">
+                                Vá em <b>Aparelhos conectados</b> no seu app de mensagens e leia este QR code.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="py-6 text-slate-400 text-[11px] font-medium italic border border-dashed border-amber-200 bg-white/40 rounded-lg font-sans">
+                              Nenhum QR code ativo. Clique no botão de gerar para requisitar a sessão.
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={triggerEvolutionConnect}
+                            disabled={triggeringEvolutionConnect}
+                            className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold py-2 px-4 rounded-lg shadow-xs cursor-pointer block transition-colors text-[10px] w-full flex items-center justify-center gap-1.5 font-sans"
+                          >
+                            <RefreshCw className={`w-3 h-3 ${triggeringEvolutionConnect ? "animate-spin" : ""}`} />
+                            {triggeringEvolutionConnect ? "Gerando sessão..." : "Gerar QR Code de Autenticação"}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Footer Info / Quick Actions */}
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 space-y-2 text-left">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block font-sans">Parâmetros de Conexão</span>
+                        <div className="grid grid-cols-2 gap-2 text-[10px]">
+                          <div>
+                            <span className="text-slate-400 font-semibold block font-sans">Nome:</span>
+                            <span className="font-bold text-slate-700 font-mono">crm</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 font-semibold block font-sans">Domínio Server:</span>
+                            <span className="font-bold text-slate-700 font-mono overflow-hidden text-ellipsis block whitespace-nowrap" title="evo.drorcamento.com">evo.drorcamento.com</span>
+                          </div>
+                          <div className="col-span-2 pt-1 border-t border-slate-200">
+                            <span className="text-slate-400 font-semibold block font-sans">URL Endereço:</span>
+                            <span className="font-mono text-slate-500 text-[9px] font-semibold break-all leading-normal">https://evo.drorcamento.com</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
               </div>
             )}
 
@@ -7941,6 +8254,82 @@ export default function App() {
 
         </main>
       </div>
+
+      {/* CUSTOM APP CONFIRM DIALOG */}
+      {appConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-55 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 shrink-0 animate-pulse">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <h4 className="font-bold text-slate-850 text-sm font-display tracking-tight uppercase">
+                {appConfirm.title}
+              </h4>
+            </div>
+            <p className="text-slate-600 text-xs leading-relaxed font-sans font-medium">
+              {appConfirm.message}
+            </p>
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setAppConfirm(null)}
+                className="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  appConfirm.onConfirm();
+                  setAppConfirm(null);
+                }}
+                className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-5 py-2 rounded-lg text-xs transition-colors cursor-pointer shadow-sm"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOM APP ALERT DIALOG */}
+      {appAlert && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-55 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                appAlert.type === "success" 
+                  ? "bg-emerald-50 text-emerald-600" 
+                  : appAlert.type === "error" 
+                    ? "bg-rose-50 text-rose-600" 
+                    : "bg-indigo-50 text-indigo-600"
+              }`}>
+                {appAlert.type === "success" ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-indigo-500" />
+                )}
+              </div>
+              <h4 className="font-bold text-slate-800 text-sm font-display tracking-tight">
+                {appAlert.title}
+              </h4>
+            </div>
+            <p className="text-slate-600 text-xs leading-relaxed font-sans font-medium">
+              {appAlert.message}
+            </p>
+            <div className="flex justify-end pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setAppAlert(null)}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-5 py-2 rounded-lg text-xs transition-colors cursor-pointer shadow-sm"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PROFESSIONAL ADD/EDIT MODAL CONTROL */}
       {showAddEditProfModal && (
