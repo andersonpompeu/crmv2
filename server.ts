@@ -1383,6 +1383,17 @@ async function startServer() {
     }
   });
 
+  // POST Embed debug logs from external websites
+  app.post("/api/embed-debug", (req, res) => {
+    try {
+      const { log, level, templateId, url } = req.body || {};
+      console.log(`[EXTERNAL_EMBED_DEBUG] [${(level || 'info').toUpperCase()}] templateId=${templateId || 'N/A'} url=${url || 'N/A'}: ${log}`);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to log" });
+    }
+  });
+
   // PUT Update Lead Status or Notes
   app.put("/api/leads/:id", (req, res) => {
     const { id } = req.params;
@@ -2573,128 +2584,336 @@ async function startServer() {
   app.get("/embed.js", (req, res) => {
     res.setHeader("Content-Type", "application/javascript");
     
-    // Read local script and return it
-    const HOST_URL = process.env.APP_URL || `http://localhost:${PORT}`;
+    // Dynamically resolve HOST_URL from request headers if APP_URL is not set
+    let HOST_URL = process.env.APP_URL;
+    if (!HOST_URL) {
+      if (req.headers.host) {
+        const protocol = req.headers["x-forwarded-proto"] || (req.secure ? "https" : "http");
+        HOST_URL = `${protocol}://${req.headers.host}`;
+      } else {
+        HOST_URL = "https://crmv2-lime.vercel.app";
+      }
+    }
     
     const embedScript = `
-/**
- * LeadCapture JS Embedded Widget Script
- * Auto-generated for external widgets
- */
 (function() {
-  // Find current running script setup
-  var currentScript = document.currentScript || (function() {
-    var scripts = document.getElementsByTagName('script');
-    return scripts[scripts.length - 1];
-  })();
+  // Capture the currentScript element immediately during script execution
+  var immediateScript = document.currentScript;
 
-  if (!currentScript) return;
+  // Remote telemetry log collector
+  function reportLog(msg, level) {
+    try {
+      var tempId = "unknown";
+      if (immediateScript) {
+        tempId = immediateScript.getAttribute('data-template') || "unknown";
+      }
+      var payload = {
+        log: msg,
+        level: level || "info",
+        url: window.location.href,
+        templateId: tempId
+      };
+      
+      fetch("${HOST_URL}/api/embed-debug", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        keepalive: true
+      });
+    } catch (e) {}
+  }
 
-  // Read config from data-attributes
-  var templateId = currentScript.getAttribute('data-template') || 'conserto-em-casa';
-  var placeholderName = currentScript.getAttribute('data-placeholder-name') || 'Qual o seu nome?';
-  var placeholderPhone = currentScript.getAttribute('data-placeholder-phone') || 'WhatsApp (com DDD)';
-  var placeholderEmail = currentScript.getAttribute('data-placeholder-email') || 'Seu e-mail (opcional)';
-  var buttonText = currentScript.getAttribute('data-button-text') || 'Receber Orçamento';
-  var buttonColor = currentScript.getAttribute('data-button-color') || '#22c55e'; // default green-500
-  var formBg = currentScript.getAttribute('data-bg-color') || '#ffffff';
-  var titleText = currentScript.getAttribute('data-title') || 'Solicite um Contato';
+  function logDebug(msg, data) {
+    var txt = "[EmbedJS] " + msg;
+    if (data) {
+      try { txt += " -- " + JSON.stringify(data); } catch(e) {}
+    }
+    console.log(txt);
+    reportLog(txt, "info");
+  }
 
-  // Create a container to place the form right before the script tag
-  var container = document.createElement('div');
-  container.className = 'leadcapture-embed-container';
-  container.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
-  container.style.maxWidth = '400px';
-  container.style.width = '100%';
-  container.style.boxSizing = 'border-box';
-  container.style.padding = '20px';
-  container.style.background = formBg;
-  container.style.borderRadius = '12px';
-  container.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
-  container.style.border = '1px solid #e2e8f0';
-  container.style.margin = '10px auto';
+  function logWarn(msg, data) {
+    var txt = "[EmbedJS] WARNING: " + msg;
+    if (data) {
+      try { txt += " -- " + JSON.stringify(data); } catch(e) {}
+    }
+    console.warn(txt);
+    reportLog(txt, "warn");
+  }
 
-  // Injecting custom CSS dynamically
-  var formId = 'lc-form-' + Math.floor(Math.random() * 100000);
-  
-  var formHtml = [
-    '<h3 style="margin: 0 0 15px 0; font-size: 18px; font-weight: 600; color: #1e293b; text-align: center;">' + titleText + '</h3>',
-    '<form id="' + formId + '" style="display: flex; flex-direction: column; gap: 12px; margin: 0;">',
-      '<div style="display: flex; flex-direction: column; gap: 4px;">',
-        '<label style="font-size: 12px; font-weight: 500; color: #64748b; margin-left: 2px;">Nome *</label>',
-        '<input type="text" name="name" required placeholder="' + placeholderName + '" style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; transition: border 0.2s;" onfocus="this.style.borderColor=\'' + buttonColor + '\'" onblur="this.style.borderColor=\'#cbd5e1\'">',
-      '</div>',
-      '<div style="display: flex; flex-direction: column; gap: 4px;">',
-        '<label style="font-size: 12px; font-weight: 500; color: #64748b; margin-left: 2px;">Telefone / WhatsApp *</label>',
-        '<input type="tel" name="phone" required placeholder="' + placeholderPhone + '" style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; transition: border 0.2s;" onfocus="this.style.borderColor=\'' + buttonColor + '\'" onblur="this.style.borderColor=\'#cbd5e1\'">',
-      '</div>',
-      '<div style="display: flex; flex-direction: column; gap: 4px;">',
-        '<label style="font-size: 12px; font-weight: 500; color: #64748b; margin-left: 2px;">E-mail (opcional)</label>',
-        '<input type="email" name="email" placeholder="' + placeholderEmail + '" style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; transition: border 0.2s;" onfocus="this.style.borderColor=\'' + buttonColor + '\'" onblur="this.style.borderColor=\'#cbd5e1\'">',
-      '</div>',
-      '<button type="submit" style="background: ' + buttonColor + '; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.1s; margin-top: 6px;">' + buttonText + '</button>',
-      '<div style="font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px;">Protegido por LeadCapture SaaS</div>',
-    '</form>',
-    '<div class="success-msg" style="display: none; text-align: center; padding: 20px 10px;">',
-      '<div style="background: #e8f5e9; color: #2e7d32; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 24px; font-weight: bold;">✓</div>',
-      '<h4 style="margin: 0 0 6px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Obrigado!</h4>',
-      '<p style="margin: 0; color: #64748b; font-size: 13px;">Seus dados foram enviados. Entraremos em contato em breve!</p>',
-    '</div>'
-  ].join('');
+  function logError(msg, err) {
+    var txt = "[EmbedJS] ERROR: " + msg;
+    if (err) {
+      txt += " -- " + (err.message || err);
+    }
+    console.error(txt);
+    reportLog(txt, "error");
+  }
 
-  container.innerHTML = formHtml;
-  currentScript.parentNode.insertBefore(container, currentScript);
+  logDebug("Script de captura carregado. Estado: " + document.readyState);
 
-  // Setup Form Handler
-  var formEl = document.getElementById(formId);
-  var successEl = container.querySelector('.success-msg');
-
-  formEl.addEventListener('submit', function(e) {
-    e.preventDefault();
+  function init() {
+    logDebug("Iniciando processo de renderização (init)...");
     
-    var submitBtn = formEl.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.style.opacity = '0.7';
-    submitBtn.innerText = 'Enviando...';
+    // Find current running script setup with super-robust selection
+    var currentScript = immediateScript;
+    if (currentScript) {
+      logDebug("Script capturado em tempo de parsing:", currentScript.outerHTML);
+      var hasDirectTemplate = currentScript.getAttribute('data-template') || currentScript.getAttribute('src');
+      if (!hasDirectTemplate) {
+        logDebug("Script capturado não possui data-template nem src legível. Usando busca manual...");
+        currentScript = null;
+      }
+    }
+    
+    if (!currentScript) {
+      logDebug("Executando varredura manual de scripts...");
+      var scripts = document.getElementsByTagName('script');
+      logDebug("Total de scripts encontrados na página:", scripts.length);
+      
+      // Passo 1: Busca específica por um script com data-template AND src contendo "embed" ou o token do app
+      for (var i = 0; i < scripts.length; i++) {
+        var src = scripts[i].getAttribute('src') || '';
+        var hasTemplate = scripts[i].getAttribute('data-template');
+        if (hasTemplate && (src.indexOf('embed') !== -1 || src.indexOf('64gkk24mthwitxgkxebevs') !== -1)) {
+          currentScript = scripts[i];
+          logDebug("Match Passo 1 (embed/host e data-template):", {
+            src: src,
+            template: hasTemplate
+          });
+          break;
+        }
+      }
+      
+      // Passo 2: Busca por qualquer script que contenha "embed.js" no src
+      if (!currentScript) {
+        for (var i = 0; i < scripts.length; i++) {
+          var src = scripts[i].getAttribute('src') || '';
+          if (src.indexOf('embed.js') !== -1 || src.indexOf('64gkk24mthwitxgkxebevs') !== -1) {
+            currentScript = scripts[i];
+            logDebug("Match Passo 2 (contém embed em src):", src);
+            break;
+          }
+        }
+      }
+      
+      // Passo 3: Busca por qualquer script com o atributo "data-template"
+      if (!currentScript) {
+        for (var j = 0; j < scripts.length; j++) {
+          var hasTemplate = scripts[j].getAttribute('data-template');
+          if (hasTemplate) {
+            currentScript = scripts[j];
+            logDebug("Match Passo 3 (data-template presente):", {
+              template: hasTemplate,
+              outerHTML: scripts[j].outerHTML
+            });
+            break;
+          }
+        }
+      }
 
-    // Form values
-    var nameVal = formEl.querySelector('input[name="name"]').value;
-    var phoneVal = formEl.querySelector('input[name="phone"]').value;
-    var emailVal = formEl.querySelector('input[name="email"]').value;
+      // Passo 4: Busca por qualquer elemento com o atributo "data-template" (Suporta divs de container!)
+      if (!currentScript) {
+        var el = document.querySelector('[data-template]');
+        if (el) {
+          currentScript = el;
+          logDebug("Match Passo 4 (qualquer elemento com data-template):", el.outerHTML);
+        }
+      }
 
-    var payload = {
-      name: nameVal,
-      phone: phoneVal,
-      email: emailVal,
+      // Passo 5: Criação de elemento fantasma seguro para fallback total
+      if (!currentScript) {
+        logWarn("Aviso: Falha catastrófica ao localizar tags específicas de inicialização. Utilizando parâmetros padrões.");
+        currentScript = document.createElement('div');
+        currentScript.setAttribute('data-template', 'conserto-em-casa');
+      }
+    }
+ 
+    // Helper para extrair parâmetros de consulta da URL do script
+    function getQueryParam(url, param) {
+      var rx = new RegExp("[?&]" + param + "=([^&#]*)", "i");
+      var match = rx.exec(url);
+      return match ? decodeURIComponent(match[1]) : null;
+    }
+
+    var scriptSrc = currentScript.getAttribute('src') || '';
+    
+    // Read config from attributes with query parameter double-fallbacks
+    var templateId = currentScript.getAttribute('data-template') || currentScript.getAttribute('data-template-id') || getQueryParam(scriptSrc, 'template') || getQueryParam(scriptSrc, 't') || 'conserto-em-casa';
+    var placeholderName = currentScript.getAttribute('data-placeholder-name') || getQueryParam(scriptSrc, 'placeholder-name') || 'Qual o seu nome?';
+    var placeholderPhone = currentScript.getAttribute('data-placeholder-phone') || getQueryParam(scriptSrc, 'placeholder-phone') || 'WhatsApp (com DDD)';
+    var placeholderEmail = currentScript.getAttribute('data-placeholder-email') || getQueryParam(scriptSrc, 'placeholder-email') || 'Seu e-mail (opcional)';
+    var buttonText = currentScript.getAttribute('data-button-text') || getQueryParam(scriptSrc, 'button-text') || 'Receber Orçamento';
+    var buttonColor = currentScript.getAttribute('data-button-color') || getQueryParam(scriptSrc, 'button-color') || '#22c55e'; // default green-500
+    var formBg = currentScript.getAttribute('data-bg-color') || getQueryParam(scriptSrc, 'bg-color') || '#ffffff';
+    var titleText = currentScript.getAttribute('data-title') || getQueryParam(scriptSrc, 'title') || 'Solicite um Contato';
+    var customContainerSelector = currentScript.getAttribute('data-container') || getQueryParam(scriptSrc, 'container');
+ 
+    console.log("[LeadCapture Widget] Parâmetros carregados:", {
       templateId: templateId,
-      referrer: window.location.href,
-      browserInfo: 'Integrado / ' + navigator.userAgent
-    };
-
-    // Post to central LeadCapture backend
-    fetch('${HOST_URL}/api/leads', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
-    .then(function(res) {
-      if (!res.ok) throw new Error('Falha ao enviar lead');
-      return res.json();
-    })
-    .then(function(data) {
-      formEl.style.display = 'none';
-      successEl.style.display = 'block';
-    })
-    .catch(function(err) {
-      alert('Houve um erro ao enviar os dados. Por favor tente novamente.');
-      submitBtn.disabled = false;
-      submitBtn.style.opacity = '1';
-      submitBtn.innerText = buttonText;
+      titleText: titleText,
+      buttonText: buttonText,
+      buttonColor: buttonColor,
+      formBg: formBg,
+      customContainerSelector: customContainerSelector
     });
-  });
 
+    // Create a container to place the form right before the script tag or inside custom container
+    var container = document.createElement('div');
+    container.className = 'leadcapture-embed-container';
+    container.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+    container.style.maxWidth = '400px';
+    container.style.width = '100%';
+    container.style.boxSizing = 'border-box';
+    container.style.padding = '20px';
+    container.style.background = formBg;
+    container.style.borderRadius = '12px';
+    container.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
+    container.style.border = '1px solid #e2e8f0';
+    container.style.margin = '10px auto';
+    container.style.display = 'block';
+    container.style.visibility = 'visible';
+    container.style.opacity = '1';
+
+    // Injecting custom CSS dynamically
+    var formId = 'lc-form-' + Math.floor(Math.random() * 100000);
+    
+    var formHtml = [
+      '<h3 style="margin: 0 0 15px 0; font-size: 18px; font-weight: 600; color: #1e293b; text-align: center;">' + titleText + '</h3>',
+      '<form id="' + formId + '" style="display: flex; flex-direction: column; gap: 12px; margin: 0;">',
+        '<div style="display: flex; flex-direction: column; gap: 4px;">',
+          '<label style="font-size: 12px; font-weight: 500; color: #64748b; margin-left: 2px;">Nome *</label>',
+          '<input type="text" name="name" required placeholder="' + placeholderName + '" style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; transition: border 0.2s;" onfocus="this.style.borderColor=\'' + buttonColor + '\'" onblur="this.style.borderColor=\'#cbd5e1\'">',
+        '</div>',
+        '<div style="display: flex; flex-direction: column; gap: 4px;">',
+          '<label style="font-size: 12px; font-weight: 500; color: #64748b; margin-left: 2px;">Telefone / WhatsApp *</label>',
+          '<input type="tel" name="phone" required placeholder="' + placeholderPhone + '" style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; transition: border 0.2s;" onfocus="this.style.borderColor=\'' + buttonColor + '\'" onblur="this.style.borderColor=\'#cbd5e1\'">',
+        '</div>',
+        '<div style="display: flex; flex-direction: column; gap: 4px;">',
+          '<label style="font-size: 12px; font-weight: 500; color: #64748b; margin-left: 2px;">E-mail (opcional)</label>',
+          '<input type="email" name="email" placeholder="' + placeholderEmail + '" style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; transition: border 0.2s;" onfocus="this.style.borderColor=\'' + buttonColor + '\'" onblur="this.style.borderColor=\'#cbd5e1\'">',
+        '</div>',
+        '<button type="submit" style="background: ' + buttonColor + '; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.1s; margin-top: 6px;">' + buttonText + '</button>',
+        '<div style="font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px;">Protegido por LeadCapture SaaS</div>',
+      '</form>',
+      '<div class="success-msg" style="display: none; text-align: center; padding: 20px 10px;">',
+        '<div style="background: #e8f5e9; color: #2e7d32; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 24px; font-weight: bold;">✓</div>',
+        '<h4 style="margin: 0 0 6px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Obrigado!</h4>',
+        '<p style="margin: 0; color: #64748b; font-size: 13px;">Seus dados foram enviados. Entraremos em contato em breve!</p>',
+      '</div>'
+    ].join('');
+
+    container.innerHTML = formHtml;
+    
+    // Determine the real placement target in the visual DOM tree
+    var placementTag = currentScript;
+    if (placementTag.parentNode && (placementTag.parentNode.tagName === 'HEAD' || placementTag.parentNode.tagName === 'HTML')) {
+      console.log("[LeadCapture Widget] Script executado na HEAD. Procurando referência física correlata no BODY do site...");
+      var allScripts = document.getElementsByTagName('script');
+      for (var k = 0; k < allScripts.length; k++) {
+        var s = allScripts[k];
+        if (s.getAttribute('data-template') === templateId && s.parentNode && s.parentNode.tagName !== 'HEAD' && s.parentNode.tagName !== 'HTML') {
+          placementTag = s;
+          console.log("[LeadCapture Widget] Referência física no BODY localizada com sucesso.");
+          break;
+        }
+      }
+    }
+
+    // Find custom target container if defined
+    var target = null;
+    if (customContainerSelector) {
+      target = document.querySelector(customContainerSelector);
+    }
+
+    if (target) {
+      console.log("[LeadCapture Widget] Inserindo formulário dentro do container customizado:", customContainerSelector);
+      target.appendChild(container);
+    } else {
+      var scriptParent = placementTag.parentNode;
+      
+      if (scriptParent && scriptParent.tagName !== 'HEAD' && scriptParent.tagName !== 'HTML') {
+        console.log("[LeadCapture Widget] Inserindo formulário inline na página (antes do script).");
+        scriptParent.insertBefore(container, placementTag);
+      } else {
+        // Fallback: Append to body safely once body is fully parsed
+        console.log("[LeadCapture Widget] Falha na inserção inline. Adicionando ao fim do document.body como alternativa segura.");
+        if (document.body) {
+          document.body.appendChild(container);
+        } else {
+          window.addEventListener('load', function() {
+            if (document.body) document.body.appendChild(container);
+          });
+        }
+      }
+    }
+
+    // Setup Form Handler
+    var formEl = document.getElementById(formId);
+    if (!formEl) {
+      console.error("[LeadCapture Widget] Erro grave: Formulário injetado não foi encontrado no DOM.");
+      return;
+    }
+    
+    var successEl = container.querySelector('.success-msg');
+
+    formEl.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      var submitBtn = formEl.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.7';
+      submitBtn.innerText = 'Enviando...';
+
+      // Form values
+      var nameVal = formEl.querySelector('input[name="name"]').value;
+      var phoneVal = formEl.querySelector('input[name="phone"]').value;
+      var emailVal = formEl.querySelector('input[name="email"]').value;
+
+      var payload = {
+        name: nameVal,
+        phone: phoneVal,
+        email: emailVal,
+        templateId: templateId,
+        referrer: window.location.href,
+        browserInfo: 'Integrado / ' + navigator.userAgent
+      };
+
+      console.log("[LeadCapture Widget] Enviando lead enviado para o template:", templateId, payload);
+
+      // Post to central LeadCapture backend
+      fetch('${HOST_URL}/api/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(function(res) {
+        if (!res.ok) throw new Error('Falha ao enviar lead');
+        return res.json();
+      })
+      .then(function(data) {
+        console.log("[LeadCapture Widget] Lead capturado com sucesso!", data);
+        formEl.style.display = 'none';
+        successEl.style.display = 'block';
+      })
+      .catch(function(err) {
+        console.error("[LeadCapture Widget] Erro ao enviar os dados:", err);
+        alert('Houve um erro ao enviar os dados. Por favor tente novamente.');
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.innerText = buttonText;
+      });
+    });
+  }
+
+  // Handle document loading states safely
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
     `;
     res.send(embedScript);

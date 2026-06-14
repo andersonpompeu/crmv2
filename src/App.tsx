@@ -1820,7 +1820,7 @@ export default function App() {
   const embedCodeSnippet = useMemo(() => {
     const targetId = selectedEmbedTemplateId || templates[0]?.id || "conserto-em-casa";
     return `<script 
-  src="${apiHost || "https://leadcapture.io"}/embed.js" 
+  src="${apiHost || "https://crmv2-lime.vercel.app"}/embed.js" 
   data-template="${targetId}"
   data-title="${embedWidgetTitle}"
   data-placeholder-name="Qual o seu nome?"
