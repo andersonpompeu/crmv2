@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import { createServer as createViteServer } from "vite";
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { GoogleGenAI, Type } from "@google/genai";
@@ -1020,10 +1019,12 @@ async function deleteWhatsAppTemplateFromFirestore(id: string) {
 function saveDatabase() {
   try {
     fs.writeFileSync(DB_FILE, JSON.stringify(dataStore, null, 2), "utf-8");
-    saveDatabaseToFirestore();
   } catch (err) {
-    logger.error("Error saving database back to disk:", err);
+    logger.warn("Disk database save skipped or failed (common on serverless environments like Vercel):", err);
   }
+  
+  // Always synchronize database state to Cloud Firestore, even if writing to local disk failed
+  saveDatabaseToFirestore();
 }
 
 function recordWebhookLog(req: any, status: number, errorMessage?: string, templateName?: string) {
@@ -3240,6 +3241,7 @@ Quando você tiver extraído PELO MENOS o Nome e o Telefone/WhatsApp válidos da
 
   // Serves compiled React app files (or dynamic development ones via Vite)
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa"
