@@ -55,7 +55,8 @@ import {
   Key,
   LogOut,
   Star,
-  CheckCircle
+  CheckCircle,
+  Lock
 } from "lucide-react";
 import { Lead, Template, AlertConfig, Professional, ProfitRecord, WhatsAppTemplate } from "./types";
 import SuccessScreen from "./components/SuccessScreen";
@@ -136,6 +137,13 @@ export default function App() {
   const triggerAppConfirm = (message: string, onConfirm: () => void, title: string = "Confirmar Ação") => {
     setAppConfirm({ show: true, title, message, onConfirm });
   };
+
+  // Admin authentication states
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
+  const [isVerifyingAdmin, setIsVerifyingAdmin] = useState<boolean>(true);
+  const [adminUsernameInput, setAdminUsernameInput] = useState("");
+  const [adminPasswordInput, setAdminPasswordInput] = useState("");
+  const [adminLoginErr, setAdminLoginErr] = useState("");
 
   // Professional independent authenticated portal states
   const [loggedInProf, setLoggedInProf] = useState<Professional | null>(null);
@@ -855,6 +863,7 @@ export default function App() {
 
   // Fetch all initial data
   const loadData = async (silent = false) => {
+    if (!isAdminAuthenticated) return;
     if (!silent) setLoading(true);
     try {
       const [leadsRes, templatesRes, configRes, professionalsRes, wtRes] = await Promise.all([
@@ -917,15 +926,50 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadData();
+    const checkAdminSession = async () => {
+      const token = localStorage.getItem("admin_session_token");
+      if (!token) {
+        setIsAdminAuthenticated(false);
+        setIsVerifyingAdmin(false);
+        return;
+      }
 
-    // Set up regular pooling of 4 seconds to simulate real-time webhook arrivals
-    const interval = setInterval(() => {
-      loadData(true);
-    }, 4000);
+      try {
+        const res = await fetch("/api/admin/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token })
+        });
+        const data = await res.json();
+        if (res.ok && data.valid) {
+          setIsAdminAuthenticated(true);
+        } else {
+          setIsAdminAuthenticated(false);
+          localStorage.removeItem("admin_session_token");
+        }
+      } catch (err) {
+        console.error("Erro ao verificar sessão do administrador", err);
+        setIsAdminAuthenticated(false);
+      } finally {
+        setIsVerifyingAdmin(false);
+      }
+    };
 
-    return () => clearInterval(interval);
+    checkAdminSession();
   }, []);
+
+  useEffect(() => {
+    if (isAdminAuthenticated) {
+      loadData();
+
+      // Set up regular pooling of 4 seconds to simulate real-time webhook arrivals
+      const interval = setInterval(() => {
+        loadData(true);
+      }, 4000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isAdminAuthenticated]);
 
   useEffect(() => {
     if (selectedLeadForDetail) {
@@ -3100,6 +3144,129 @@ export default function App() {
     );
   }
 
+  if (isVerifyingAdmin) {
+    return (
+      <div className="bg-[#050614] min-h-screen text-slate-100 flex flex-col justify-center items-center font-sans relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-indigo-600/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="flex flex-col items-center gap-3">
+          <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+          <span className="text-xs text-slate-400 font-medium tracking-wide">Verificando segurança do painel...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // SUBMIT ADMIN LOGIN HANDLER
+  const handleAdminLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminUsernameInput.trim() || !adminPasswordInput.trim()) {
+      setAdminLoginErr("Por favor, preencha todos os campos.");
+      return;
+    }
+
+    setAdminLoginErr("");
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: adminUsernameInput.trim(),
+          password: adminPasswordInput.trim()
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAdminLoginErr(data.error || "Credenciais de administrador inválidas.");
+      } else {
+        localStorage.setItem("admin_session_token", data.token);
+        setIsAdminAuthenticated(true);
+      }
+    } catch (err) {
+      console.error("Error logging in admin:", err);
+      setAdminLoginErr("Não foi possível conectar ao servidor de autenticação.");
+    }
+  };
+
+  if (!isAdminAuthenticated) {
+    return (
+      <div className="bg-gradient-to-b from-[#0b0c1e] via-[#050614] to-[#020309] min-h-screen text-slate-100 flex flex-col font-sans justify-center items-center py-6 px-4 relative select-none">
+        {/* Ambient Blur */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none" />
+
+        <div className="w-full max-w-md bg-[#0e1022]/95 border border-indigo-950/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner">
+              <Lock className="w-6 h-6 animate-pulse" />
+            </div>
+            <h2 className="text-xl font-extrabold tracking-tight text-white font-sans">Acesso Administrativo</h2>
+            <p className="text-xs text-slate-400">Entre com as credenciais de administrador para gerenciar o SaaS.</p>
+          </div>
+
+          <form onSubmit={handleAdminLoginSubmit} className="space-y-4">
+            {adminLoginErr && (
+              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs py-2.5 px-3 rounded-xl flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                <span>{adminLoginErr}</span>
+              </div>
+            )}
+
+            <div className="space-y-1 text-left">
+              <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block">Usuário Admin</label>
+              <input
+                type="text"
+                required
+                value={adminUsernameInput}
+                onChange={(e) => setAdminUsernameInput(e.target.value)}
+                placeholder="Ex: admin"
+                className="w-full bg-[#050614]/80 border border-slate-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors tracking-tight text-slate-100 font-mono"
+              />
+            </div>
+
+            <div className="space-y-1 text-left">
+              <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block">Senha de Acesso</label>
+              <input
+                type="password"
+                required
+                value={adminPasswordInput}
+                onChange={(e) => setAdminPasswordInput(e.target.value)}
+                placeholder="••••••••••••"
+                className="w-full bg-[#050614]/80 border border-slate-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors tracking-tight text-slate-100 font-mono"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-all shadow-lg active:scale-[0.98] cursor-pointer mt-2"
+            >
+              Confirmar Credenciais e Entrar
+            </button>
+          </form>
+
+          {/* Default Credentials Help Box */}
+          <div className="bg-slate-950/40 p-4 border border-slate-900 rounded-2xl">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block mb-1">Credenciais de Demonstração</span>
+            <div className="flex justify-between text-xs text-slate-300 font-mono">
+              <div>Usuário: <span className="text-white hover:underline">admin</span></div>
+              <div>Senha: <span className="text-white hover:underline">admin123</span></div>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-slate-850 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setShowProfLoginScreen(true);
+              }}
+              className="text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer inline-flex items-center gap-1.5 font-semibold"
+            >
+              <Key className="w-3.5 h-3.5" /> Acessar Portal do Parceiro
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#060814] w-full min-h-screen flex text-slate-100 font-sans border-none m-0 p-0 overflow-x-hidden antialiased selection:bg-indigo-500/30">
       <div className="flex w-full min-h-screen">
@@ -3331,6 +3498,16 @@ export default function App() {
               </button>
             </div>
             <p className="text-[10px] text-slate-600">v2.4.0 High-Density Cloud</p>
+            <button
+              id="sidebar-btn-admin-logout"
+              onClick={() => {
+                localStorage.removeItem("admin_session_token");
+                setIsAdminAuthenticated(false);
+              }}
+              className="w-full mt-1.5 flex items-center justify-center gap-1.5 py-1.5 bg-rose-950/20 border border-rose-900/30 text-rose-300 text-[10px] font-bold rounded-lg hover:bg-rose-950/40 hover:border-rose-500/40 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Sair Admin
+            </button>
           </div>
         </nav>
 

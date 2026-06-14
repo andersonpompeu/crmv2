@@ -820,6 +820,13 @@ interface Session {
 
 let activeSessions: Session[] = [];
 
+interface AdminSession {
+  id: string;
+  expiresAt: string;
+}
+
+let activeAdminSessions: AdminSession[] = [];
+
 function getCookies(req: express.Request) {
   const list: Record<string, string> = {};
   const cookieHeader = req.headers.cookie;
@@ -1957,6 +1964,55 @@ async function startServer() {
     );
 
     res.json({ success: true, professional: prof, sessionToken: sessionTokenVal, expiresAt: sessionExpiry.toISOString() });
+  });
+
+  // POST Admin Login
+  app.post("/api/admin/login", (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      res.status(400).json({ error: "Usuário e senha são obrigatórios." });
+      return;
+    }
+
+    const trimmedUser = username.trim().toLowerCase();
+    const adminUser = process.env.ADMIN_USER || "admin";
+    const adminPass = process.env.ADMIN_PASSWORD || "admin123";
+
+    if (trimmedUser !== adminUser.toLowerCase() || password !== adminPass) {
+      res.status(401).json({ error: "Usuário ou senha de administrador incorretos." });
+      return;
+    }
+
+    // Successful admin authentication! Create session token
+    const tokenVal = `admin-sess-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days session
+
+    activeAdminSessions.push({
+      id: tokenVal,
+      expiresAt: expires.toISOString()
+    });
+
+    res.json({ success: true, token: tokenVal, expiresAt: expires.toISOString() });
+  });
+
+  // POST Admin Verify Session
+  app.post("/api/admin/verify", (req, res) => {
+    const { token } = req.body;
+    if (!token) {
+      res.status(400).json({ error: "Token é obrigatório." });
+      return;
+    }
+
+    // Clean expired sessions
+    activeAdminSessions = activeAdminSessions.filter(s => new Date(s.expiresAt) > new Date());
+
+    const session = activeAdminSessions.find(s => s.id === token);
+    if (!session) {
+      res.status(401).json({ valid: false, error: "Sessão expirada ou inválida." });
+      return;
+    }
+
+    res.json({ valid: true });
   });
 
   // DELETE Professional
