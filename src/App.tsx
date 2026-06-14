@@ -549,8 +549,8 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Dynamically retrieve base host for the embed script
-    setApiHost(window.location.origin);
+    // Set the base host for the embed script, prioritizing the user's custom production Vercel domain
+    setApiHost("https://crmv2-lime.vercel.app");
 
     // Check for 'review' and 'token' in query string
     const urlParams = new URLSearchParams(window.location.search);

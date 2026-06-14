@@ -2584,10 +2584,10 @@ async function startServer() {
   app.get("/embed.js", (req, res) => {
     res.setHeader("Content-Type", "application/javascript");
     
-    // Dynamically resolve HOST_URL from request headers if APP_URL is not set
+    // Dynamically resolve HOST_URL, prioritizing the user's custom production Vercel domain
     let HOST_URL = process.env.APP_URL;
     if (!HOST_URL) {
-      if (req.headers.host) {
+      if (req.headers.host && !req.headers.host.includes("run.app") && !req.headers.host.includes("localhost")) {
         const protocol = req.headers["x-forwarded-proto"] || (req.secure ? "https" : "http");
         HOST_URL = `${protocol}://${req.headers.host}`;
       } else {
